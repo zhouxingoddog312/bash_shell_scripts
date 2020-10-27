@@ -1,0 +1,148 @@
+#!/bin/bash
+if [ ! -d ~/.spal ]
+then
+	mkdir -p ~/.spal
+	touch ~/.spal/spal-temp ~/.spal/spal
+elif [ ! -O ~/.spal/spal ]
+then
+	touch ~/.spal/spal
+elif [ ! -O ~/.spal/spal-temp ]
+then
+	touch ~/.spal/spal-temp
+fi
+
+
+exec 7>~/.spal/spal-temp
+exec 9<~/.spal/spal
+exec 8>>~/.spal/spal
+function _version(){
+	cat << EOF
+----------------------------------------------------------------------------------------------
+Name: spal, simple-alias
+Version: 1.00
+Author: goddog312
+----------------------------------------------------------------------------------------------
+EOF
+return 0
+}
+
+function _help(){
+	cat <<EOF
+----------------------------------------------------------------------------------------------
+Usage: spal [OPTION] [NAME] [COMMAND]
+Options:
+	-e [NAME]		--	execute command associate with customized name
+					this is default option, when the option haven't given
+	-a [NAME] [COMMAND]	--	add alias command with customized name
+	-c			--	clear all aliases
+	-r [NAME]		--	remove alias by name
+	-l			--	list all aliases
+	-v			--	output version information
+	-h			--	output help information
+----------------------------------------------------------------------------------------------
+EOF
+return 0
+}
+
+function _list(){
+	if [ -s ~/.spal/spal ]
+	then
+		echo "alias	 	command"
+		sed 'N;s/\n/	:	/' <&9
+	else
+		echo "No alias, you can use the option -a to add alias."
+	fi
+}
+function _clear(){
+	cat /dev/null > ~/.spal/spal
+	echo "All aliases cleared!"
+}
+function _add(){
+	if [ $# -ne 2 ]
+	then
+		echo -e "Not enough parameters!\nUsage: spal -a [NAME] [COMMAND]"
+		return 1
+	else
+		echo "$1">&8
+		echo "$2">&8
+		echo "add $1 : $2"
+	fi
+}
+function _remove(){
+	if [ ! -s ~/.spal/spal ]
+	then
+		echo "There's nothing to remove."
+		return 1
+	fi
+	if [ $# -ne 1 ]
+	then
+		echo -e "Select alias by name\nUsage: spal -r [NAME]"
+		return 1
+	fi
+	local name="$1"
+	sed '/^'$name'$/{N;d}'<&9>&7
+	cat ~/.spal/spal-temp > ~/.spal/spal
+}
+function _execute(){
+	if [ ! -s ~/.spal/spal ]
+	then
+		echo "There's no alias to execute!"
+		return 1
+	fi
+	if [ $# -ne 1 ]
+	then
+		echo -e "Select alias by name\nUsage: spal -e [NAME]"
+		return 1
+	fi
+	local name="$1"
+	local cmd=$(sed -n '/^'$name'$/{n;p}'<&9)
+	eval "$cmd"
+}
+
+
+
+
+#main
+#function spal(){
+	
+if [ -n "$1" ]
+then
+	option="$1"
+	case "$option" in
+		-l)
+			_list
+			;;
+		-c)
+			_clear
+			;;
+		-a)
+			_add "$2" "$3"
+			;;
+		-r)
+			_remove "$2"
+			;;
+		-h)
+			_help
+			;;
+		-v)
+			_version
+			;;
+		-e)
+			_execute "$2"
+			;;
+		*)
+			_execute "$1"
+			;;
+	esac
+else
+	_help
+fi
+
+
+
+
+#}
+
+exec 7>&-
+exec 9<&-
+exec 8>&-
