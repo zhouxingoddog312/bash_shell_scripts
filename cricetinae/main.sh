@@ -1,28 +1,34 @@
 #!/bin/bash
-#dependence sed mp3info
+#dependence sed mp3info iconv
 SOURCE_DIR=~/transfer
 TARGET_DIR=~/cricetinae
 SUB_CATEGORY=(music)
 RELATION_LIST=list
 
 source ./music.sh
-local identifiable=0
+#接受目标文件夹的绝对路径
+function literate()
+{
+	for file in $(ls $1)
+	do
+		file=$1"/"$file
+		if [ -d $file ]
+		then
+			literate $file
+		else
+			for suffix in $(cut -d , -f 1 $RELATION_LIST)
+			do
+				if [ ${file##*.} = $suffix ]
+				then
+					local func=$(sed -n /$suffix/p $RELATION_LIST|cut -d, -f2)
+					$func $file
+				fi
+			done
+		fi
+	done
+}
 if ! [ -d $SOURCE_DIR ]
 then
 	exit 1
 fi
-for files in $(ls -R|sed /:$/d)
-do
-	for suffix in $(cut -d , -f 1 $RELATION_LIST)
-	do
-		if [ ${file##*.} = $suffix ]
-		then
-			identifiable=1
-			local func=$(sed -n /$suffix/p|cut -d, -f2)
-		fi
-	done
-	if [ $identifiable -eq 1 ]
-	then
-		$func $files
-	fi
-done
+literate $SOURCE_DIR
