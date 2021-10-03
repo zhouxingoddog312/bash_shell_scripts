@@ -3,8 +3,13 @@
 SOURCE_DIR=~/transfer
 TARGET_DIR=~/cricetinae
 SUB_CATEGORY=(music)
-RELATION_LIST=list
 
+declare -A RELATION_LIST
+RELATION_LIST=
+(
+	["mp3"]=mp3_handle
+	["gba"]=generate_handle
+)
 source ./music.sh
 #接受目标文件夹的绝对路径
 function literate()
