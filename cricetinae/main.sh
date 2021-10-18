@@ -2,7 +2,7 @@
 #dependence ffprobe iconv
 SOURCE_DIR=~/transfer
 TARGET_DIR=~/cricetinae
-SUB_CATEGORY=(music)
+SUB_CATEGORY=(music game)
 
 declare -A RELATION_LIST
 RELATION_LIST=\
@@ -13,10 +13,10 @@ RELATION_LIST=\
 source ./music.sh
 function literate()
 {
+	#应该用循环代替递归
 	#在这里，如果$1是相对路径，需要将其转换为绝对路径
 	for file in "$(ls $1)"
 	do
-		#在这里需要解决，如果文件或目录名的编码是gb2312，则将其转换为UTF-8
 		file=$1"/""$file"
 		if [ -d "$file" ]
 		then
