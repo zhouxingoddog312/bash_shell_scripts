@@ -15,23 +15,30 @@ function literate()
 {
 	#应该用循环代替递归
 	#在这里，如果$1是相对路径，需要将其转换为绝对路径
-	for file in "$(ls $1)"
-	do
-		file=$1"/""$file"
-		if [ -d "$file" ]
-		then
-			literate "$file"
-		else
-			if ! [ -z ${RELATION_LIST["${file##*.}"]} ]
+	if [ "`ls -A $1`" ]
+	#防止处理空目录
+	then
+		for file in "$(ls $1)"
+		do
+			file=$1"/""$file"
+			if [ -d "$file" ]
+			#递归处理子目录
 			then
-				local func=${RELATION_LIST["${file##*.}"]}
-				$func "$file"
+				literate "$file"
+			else
+				if ! [ -z ${RELATION_LIST["${file##*.}"]} ]
+				#判断在关系数组中是否有处理函数存在
+				then
+					local func=${RELATION_LIST["${file##*.}"]}
+					$func "$file"
+				fi
 			fi
-		fi
-	done
+		done
+	fi
 }
 if ! [ -d $SOURCE_DIR ]
 then
+	mkdir -p $SOURCE_DIR
 	exit 1
 fi
 literate $SOURCE_DIR
