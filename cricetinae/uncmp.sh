@@ -4,7 +4,8 @@ function zip_handle()
 }
 function rar_handle()
 {
-	cd $SOURCE_DIR;unrar e -p- -inul "$1";cd -&&rm -rf "$1"
+	cd $SOURCE_DIR;unrar e -p- "$1"&&rm -rf "$1"
+	cd -
 }
 function p7z_handle()
 {

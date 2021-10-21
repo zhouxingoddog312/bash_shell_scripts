@@ -16,9 +16,10 @@ UNCOMPRESS_LIST=\
 HANDLE_LIST=\
 (
 	["mp3"]=mp3_handle
+	["flac"]=mp3_handle
+	["mpga"]=mp3_handle
 	["gba"]=generate_handle
 	["nds"]=generate_handle
-	["psp"]=generate_handle
 )
 source ./music.sh
 source ./uncmp.sh
