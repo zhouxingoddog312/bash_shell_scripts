@@ -9,3 +9,4 @@ debug:
 install:
 
 clean:
+	$(RM) a.out
