@@ -33,7 +33,7 @@ static void cheat(void)
 	Cheat=true;
 }
 
-
+//用于开始界面的函数
 int command_mode(int argc,char *argv[])
 {
 	extern bool Cheat;
@@ -52,26 +52,45 @@ int command_mode(int argc,char *argv[])
 		{
 			case 'v':
 				version();
-				result=0;
+				result=1;
 				break;
 			case 'h':
 				help();
-				result=0;
+				result=1;
 				break;
 			case 'i':
-				result=1;
+				/*删除旧的得分榜数据库文件，创建新的*/
+				result=0;
 				break;
 			case 'c':
 				cheat();
-				if(Cheat)
-					puts("hello");
-				result=1;
+				result=0;
 				break;
 			case '?':
 				opt_error(optopt);
-				result=0;
+				result=2;
 				break;
 		}
 	}
 	return result;
+}
+void draw_menu(char *options[],int current_highlight,int start_row,int start_col)
+{
+	int current_row=0;
+	char **option_ptr;
+	char *txt_ptr;
+	option_ptr=options;
+	while(*option_ptr)
+	{
+		if(current_row==current_highlight)
+			attron(A_STANDOUT);
+		txt_ptr=options[current_row];
+		mvprintw(start_row+current_row*2,start_col,"%s",txt_ptr);
+		if(current_row==current_highlight)
+			attroff(A_STANDOUT);
+		current_row++;
+		option_ptr++;
+	}
+	mvprintw(LINES-2,1,"Move highlight then press enter");
+	refresh();
 }

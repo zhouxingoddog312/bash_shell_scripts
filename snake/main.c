@@ -1,7 +1,6 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#include <curses.h>
 
 #include "data.h"
 
@@ -14,8 +13,22 @@ int main(int argc,char *argv[])
 	if(argc>1)
 	{
 		command_result=command_mode(argc,argv);
-		if(!command_result)
+		if(command_result)
 			exit(command_result);
 	}
+
+	initscr();
+
+	char *str[]=
+	{
+		"one",
+		"two",
+		"three",
+		0
+	};
+	draw_menu(str,1,2,2);
+	getchar();
+
+	endwin();
 	exit(0);
 }
