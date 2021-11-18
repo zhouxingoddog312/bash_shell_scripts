@@ -24,10 +24,15 @@ typedef node *snake;
 
 //游戏逻辑函数
 
-/*开始界面所用函数*/
+//用于参数模式的函数
 int command_mode(int argc,char *argv[]);
-void draw_menu(char *options[],int current_highlight,int start_row,int start_col);
 
+//用于开始界面的函数
+void draw_select_menu(WINDOW *win_ptr,char *options[],int current_highlight,int start_row,int start_col);
+void draw_subwin(WINDOW *win_ptr,char *strings[],int start_row,int start_col);
+void clear_start_screen(void);
+int getchoice(WINDOW *win_ptr,char *choices[]);
 
+//用于游戏界面的函数
 
 #endif
