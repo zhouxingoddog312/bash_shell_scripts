@@ -28,11 +28,12 @@ typedef node *snake;
 int command_mode(int argc,char *argv[]);
 
 //用于开始界面的函数
-void draw_select_menu(WINDOW *win_ptr,char *options[],int current_highlight,int start_row,int start_col);
-void draw_subwin(WINDOW *win_ptr,char *strings[],int start_row,int start_col);
+void draw_select_window(WINDOW *win_ptr,char *options[],int current_highlight,int start_row,int start_col);
 void clear_start_screen(void);
 int getchoice(WINDOW *win_ptr,char *choices[]);
 
 //用于游戏界面的函数
+void draw_snake_window(WINDOW *win_ptr,snake greedy,food f1);
+void draw_status_window(WINDOW *win_ptr,double speed);
 
 #endif

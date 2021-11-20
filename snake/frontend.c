@@ -3,15 +3,15 @@
 #include <stdio.h>
 #include "data.h"
 
-//用于参数模式的函数
+//用于参数模式的函数声明
 static void version(void);
 static void help(void);
 static void opt_error(char c);
 
-//用于开始界面的函数
+//用于开始界面的函数声明
 
 
-//用于参数模式的函数
+//用于参数模式的函数定义
 static void version(void)
 {
 	fprintf(stdout,"greedy snake version %s\n",VERSION);
@@ -76,9 +76,9 @@ int command_mode(int argc,char *argv[])
 }
 
 
-//用于开始界面的函数
-void draw_select_menu(WINDOW *win_ptr,char *options[],int current_highlight,int start_row,int start_col)
-{
+//用于开始界面的函数定义
+void draw_select_window(WINDOW *win_ptr,char *options[],int current_highlight,int start_row,int start_col)
+{/*不想有高亮显示时将current_highlight设为-1*/
 	int current_row=0;
 	char **option_ptr;
 	char *txt_ptr;
@@ -94,46 +94,30 @@ void draw_select_menu(WINDOW *win_ptr,char *options[],int current_highlight,int 
 		current_row++;
 		option_ptr++;
 	}
-	mvprintw(LINES-2,1,"move highlight to select");
-	refresh();
-	wrefresh(win_ptr);
-}
-void draw_subwin(WINDOW *win_ptr,char *strings[],int start_row,int start_col)
-{
-	int current_row=0;
-	char **option_ptr;
-	char *txt_ptr;
-	option_ptr=strings;
-	while(*option_ptr)
-	{
-		txt_ptr=strings[current_row];
-		mvwprintw(win_ptr,start_row+current_row,start_col,"%s",txt_ptr);
-		current_row++;
-		option_ptr++;
-	}
 	wrefresh(win_ptr);
 }
 void clear_start_screen(void)
 {
 	clear();
-	mvprintw(1,COLS/2-2,"%s","Greedy Snake");
+	mvprintw(1,COLS/2-7,"%s","Greedy Snake");
 	refresh();
 }
 int getchoice(WINDOW *win_ptr,char *choices[])
 {
 	static int selected_row=0;
 	int max_row=0;
-	int start_screenrow=6,start_screencol=2;
+	int start_screenrow=WINDOW_HEIGHT/2-5,start_screencol=WINDOW_WIDTH/2-6;
 	char **options;
 	int selected;
 	int key=0;
 	options=choices;
+	mvprintw(LINES-2,1,"Move highlight then press enter");
+	refresh();
 	while(*options)
 	{
 		max_row++;
 		options++;
 	}
-	//clear_start_screen();
 	keypad(stdscr,true);
 	cbreak();
 	noecho();
@@ -154,11 +138,43 @@ int getchoice(WINDOW *win_ptr,char *choices[])
 				selected_row++;
 		}
 		selected=*choices[selected_row];
-		draw_select_menu(win_ptr,choices,selected_row,start_screenrow,start_screencol);
+		draw_select_window(win_ptr,choices,selected_row,start_screenrow,start_screencol);
 		key=getch();
 	}
 	keypad(stdscr,false);
 	nocbreak();
 	echo();
 	return selected;
+}
+
+
+//用于游戏界面的函数定义
+void draw_snake_window(WINDOW *win_ptr,snake greedy,food f1)
+{
+	extern int Current_len;
+	wclear(win_ptr);
+	box(win_ptr,ACS_VLINE,ACS_HLINE);
+	mvwaddch(win_ptr,f1.y,f1.x,'@');
+	for(int i=0;i<Current_len;i++)
+	{
+		if(i==0)
+			mvwaddch(win_ptr,greedy[i].y,greedy[i].x,'#');
+		else
+			mvwaddch(win_ptr,greedy[i].y,greedy[i].x,'*');
+	}
+	wrefresh(win_ptr);
+}
+void draw_status_window(WINDOW *win_ptr,double speed)
+{
+	extern int Current_len;
+	int score=Current_len;
+	char speed_string[38];
+	char score_string[38];
+	sprintf(score_string,"Current Score = %d",score);
+	sprintf(speed_string,"Current Speed = %10.5lf",speed);
+	wclear(win_ptr);
+	box(win_ptr,ACS_VLINE,ACS_HLINE);
+	mvwprintw(win_ptr,WINDOW_HEIGHT/6,WINDOW_WIDTH/3,"%s",score_string);
+	mvwprintw(win_ptr,WINDOW_HEIGHT/3,WINDOW_WIDTH/3,"%s",speed_string);
+	wrefresh(win_ptr);
 }
