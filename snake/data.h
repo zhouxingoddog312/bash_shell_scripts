@@ -2,6 +2,8 @@
 #define _DATA_H
 
 #include <curses.h>
+#include <term.h>
+#include <termios.h>
 #include <stdbool.h>
 #include <ndbm.h>
 #define WINDOW_WIDTH 40
@@ -10,12 +12,15 @@
 
 #define VERSION ("1.00")
 
+static struct termios initial_setting,new_setting;
+
 typedef struct
 {
 	int x;
 	int y;
 }node;
 typedef node food;
+typedef node direct;
 typedef node *snake;
 
 //存档数据和得分榜数据处理函数
@@ -35,5 +40,7 @@ int getchoice(WINDOW *win_ptr,char *choices[]);
 //用于游戏界面的函数
 void draw_snake_window(WINDOW *win_ptr,snake greedy,food f1);
 void draw_status_window(WINDOW *win_ptr,double speed);
-
+void update_snake(snake greedy,direct d);
+void init_keyboard(void);
+void close_keyboard(void);
 #endif

@@ -178,3 +178,30 @@ void draw_status_window(WINDOW *win_ptr,double speed)
 	mvwprintw(win_ptr,WINDOW_HEIGHT/3,WINDOW_WIDTH/3,"%s",speed_string);
 	wrefresh(win_ptr);
 }
+void update_snake(snake greedy,direct d)
+{
+	extern int Current_len;
+	for(int i=0;i<Current_len;i++)
+	{
+		greedy[i].x+=d.x;
+		greedy[i].y+=d.y;
+	}
+}
+void init_keyboard(void)
+{
+	tcgetattr(0,&initial_setting);
+	new_setting=initial_setting;
+	keypad(stdscr,true);
+	noecho();
+	new_setting.c_lflag&=~ICANON;
+	new_setting.c_lflag&=~ECHO;
+	new_setting.c_cc[VMIN]=0;
+	new_setting.c_cc[VTIME]=0;
+	tcsetattr(0,TCSANOW,&new_setting);
+}
+void close_keyboard(void)
+{
+	keypad(stdscr,false);
+	echo();
+	tcsetattr(0,TCSANOW,&initial_setting);
+}

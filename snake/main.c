@@ -9,6 +9,7 @@ int Current_len=2;
 bool Map[WINDOW_HEIGHT-2][WINDOW_WIDTH-2]={{false}};
 int main(int argc,char *argv[])
 {
+	direct d={1,0};
 	snake greedy=malloc(sizeof(food)*TOTLE_POINT);
 	greedy[0].x=2;
 	greedy[0].y=1;
@@ -70,6 +71,10 @@ int main(int argc,char *argv[])
 		}
 	}while(command_result!='g');
 	delwin(start_rank_win);
+	clear();
+	box(stdscr,ACS_VLINE,ACS_HLINE);
+	mvprintw(1,COLS/2-7,"%s","Greedy Snake");
+	refresh();
 
 //游戏界面，现在select_win作为游戏窗口
 	WINDOW *instructions_win=newwin(WINDOW_HEIGHT/2,WINDOW_WIDTH,(LINES-WINDOW_HEIGHT)/2,COLS/2+3);
@@ -77,9 +82,14 @@ int main(int argc,char *argv[])
 	box(instructions_win,ACS_VLINE,ACS_HLINE);
 	box(status_win,ACS_VLINE,ACS_HLINE);
 	draw_select_window(instructions_win,instructions,-1,1,1);
-	draw_status_window(status_win,1.0003);
-	draw_snake_window(select_win,greedy,f);
 
+	while(true)
+	{
+		draw_status_window(status_win,1.0003);
+		draw_snake_window(select_win,greedy,f);
+		update_snake(greedy,d);
+		usleep(100000);
+	}
 	getchar();
 	delwin(select_win);
 	delwin(instructions_win);
