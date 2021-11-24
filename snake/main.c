@@ -1,21 +1,27 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdbool.h>
-
+#include <time.h>
 #include "data.h"
 
 bool Cheat=false;
 int Current_len=2;
-bool Map[WINDOW_HEIGHT-2][WINDOW_WIDTH-2]={{false}};
+bool Map[WINDOW_HEIGHT-2][WINDOW_WIDTH-2]={{true}};
 int main(int argc,char *argv[])
 {
+	srand(time(0));
+	bool flag=false;
 	direct d={1,0};
+	int key,index_x,index_y;
 	snake greedy=malloc(sizeof(food)*TOTLE_POINT);
 	greedy[0].x=2;
 	greedy[0].y=1;
 	greedy[1].x=1;
 	greedy[1].y=1;
 	food f={3,3};
+	for(index_y=0;index_y<WINDOW_HEIGHT-2;index_y++)
+		for(index_x=0;index_x<WINDOW_WIDTH;index_x++)
+			Map[index_y][index_x]=true;
 //参数处理
 	int command_result;
 	if(argc>1)
@@ -83,13 +89,27 @@ int main(int argc,char *argv[])
 	box(status_win,ACS_VLINE,ACS_HLINE);
 	draw_select_window(instructions_win,instructions,-1,1,1);
 
+	init_keyboard();
+
 	while(true)
 	{
 		draw_status_window(status_win,1.0003);
 		draw_snake_window(select_win,greedy,f);
-		update_snake(greedy,d);
-		usleep(100000);
+		get_key(&d);
+		if(Isover(greedy))
+			;
+		if(Iswin())
+			;
+		if(Eatfood(greedy,f))
+		{
+			Createfood(&f);
+			flag=true;
+		}
+		update_snake(greedy,d,&flag);
 	}
+
+	close_keyboard();
+
 	getchar();
 	delwin(select_win);
 	delwin(instructions_win);

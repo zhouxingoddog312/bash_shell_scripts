@@ -178,30 +178,139 @@ void draw_status_window(WINDOW *win_ptr,double speed)
 	mvwprintw(win_ptr,WINDOW_HEIGHT/3,WINDOW_WIDTH/3,"%s",speed_string);
 	wrefresh(win_ptr);
 }
-void update_snake(snake greedy,direct d)
+void update_snake(snake greedy,direct d,bool *eated)
 {
+	extern bool Map[WINDOW_HEIGHT-2][WINDOW_WIDTH-2];
 	extern int Current_len;
-	for(int i=0;i<Current_len;i++)
+	int i;
+	if(*eated)
 	{
-		greedy[i].x+=d.x;
-		greedy[i].y+=d.y;
+		Current_len++;
+		*eated=false;
+	}
+	node temp;
+	temp=greedy[0];
+	temp.x+=d.x;
+	temp.y+=d.y;
+	for(i=Current_len-1;i>0;i--)
+	{
+		greedy[i]=greedy[i-1];
+	}
+	greedy[0]=temp;
+
+	for(i=0;i<Current_len;i++)
+	{
+		Map[greedy[i].y-1][greedy[i].x-1]=false;
 	}
 }
 void init_keyboard(void)
 {
-	tcgetattr(0,&initial_setting);
-	new_setting=initial_setting;
 	keypad(stdscr,true);
 	noecho();
-	new_setting.c_lflag&=~ICANON;
-	new_setting.c_lflag&=~ECHO;
-	new_setting.c_cc[VMIN]=0;
-	new_setting.c_cc[VTIME]=0;
-	tcsetattr(0,TCSANOW,&new_setting);
+	cbreak();
+	timeout(1000);
+}
+void get_key(direct *d)
+{
+	int key;
+	if((key=getch())!=ERR)
+		{
+			switch(key)
+			{
+				case 'A':
+				case 'a':
+				case KEY_LEFT:
+					if(d->x!=1)
+					{
+						d->x=-1;
+						d->y=0;
+					}
+					break;
+				case 'D':
+				case 'd':
+				case KEY_RIGHT:
+					if(d->x!=-1)
+					{
+						d->x=1;
+						d->y=0;
+					}
+					break;
+				case 'W':
+				case 'w':
+				case KEY_UP:
+					if(d->y!=1)
+					{
+						d->x=0;
+						d->y=-1;
+					}
+					break;
+				case 'S':
+				case 's':
+				case KEY_DOWN:
+					if(d->y!=-1)
+					{
+						d->x=0;
+						d->y=1;
+					}
+					break;
+			}
+		}
 }
 void close_keyboard(void)
 {
 	keypad(stdscr,false);
 	echo();
-	tcsetattr(0,TCSANOW,&initial_setting);
+	timeout(-1);
+	nocbreak();
+}
+bool Eatfood(snake greedy,food f1)
+{
+	if(greedy[0].x==f1.x&&greedy[0].y==f1.y)
+		return true;
+	else
+		return false;
+}
+bool Isover(snake greedy)
+{
+	extern int Current_len;
+	bool flag=false;
+	if(greedy[0].x==0||greedy[0].x==(COLS-1)||greedy[0].y==0||greedy[0].y==(LINES-1))
+		flag=true;
+	for(int i=1;i<Current_len;i++)
+	{
+		if(greedy[0].x==greedy[i].x&&greedy[0].y==greedy[i].y)
+			flag=true;
+	}
+	return flag;
+}
+bool Iswin(void)
+{
+	extern int Current_len;
+	if(Current_len==TOTLE_POINT)
+		return true;
+	else
+		return false;
+}
+void Createfood(food *fd)
+{
+	int index_x=0,index_y=0;
+	extern bool Map[WINDOW_HEIGHT-2][WINDOW_WIDTH-2];
+	extern int Current_len;
+	int residue=TOTLE_POINT-Current_len;
+	int count=0;
+	count=rand()%residue+1;
+	while(count!=0)
+	{
+		if(Map[index_y][index_x])
+			count--;
+		if(index_x==WINDOW_WIDTH-3)
+		{
+			index_y++;
+			index_x=0;
+		}
+		else
+			index_x++;
+	}
+	fd->x=index_x+1;
+	fd->y=index_y+1;
 }
