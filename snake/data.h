@@ -8,6 +8,7 @@
 #define WINDOW_WIDTH 40
 #define WINDOW_HEIGHT 20
 #define TOTLE_POINT ((WINDOW_WIDTH-2)*(WINDOW_HEIGHT-2))
+#define SPEED_MAX 1000
 
 #define VERSION ("1.00")
 
@@ -36,12 +37,13 @@ void clear_start_screen(void);
 int getchoice(WINDOW *win_ptr,char *choices[]);
 
 //用于游戏界面的函数
+void Checkmap(snake greedy);
 void draw_snake_window(WINDOW *win_ptr,snake greedy,food f1);
-void draw_status_window(WINDOW *win_ptr,double speed);
+void draw_status_window(WINDOW *win_ptr,int speed_rank);
 void update_snake(snake greedy,direct d,bool *eated);
-void init_keyboard(void);
+void init_keyboard(WINDOW *w_ptr);
 void get_key(direct *d);
-void close_keyboard(void);
+void close_keyboard(WINDOW *w_ptr);
 bool Eatfood(snake greedy,food f1);
 bool Isover(snake greedy);
 bool Iswin(void);

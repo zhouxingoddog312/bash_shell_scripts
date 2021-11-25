@@ -155,7 +155,7 @@ void draw_snake_window(WINDOW *win_ptr,snake greedy,food f1)
 	wclear(win_ptr);
 	box(win_ptr,ACS_VLINE,ACS_HLINE);
 	mvwaddch(win_ptr,f1.y,f1.x,'@');
-	for(int i=0;i<Current_len;i++)
+	for(int i=Current_len-1;i>=0;i--)
 	{
 		if(i==0)
 			mvwaddch(win_ptr,greedy[i].y,greedy[i].x,'#');
@@ -164,19 +164,33 @@ void draw_snake_window(WINDOW *win_ptr,snake greedy,food f1)
 	}
 	wrefresh(win_ptr);
 }
-void draw_status_window(WINDOW *win_ptr,double speed)
+void draw_status_window(WINDOW *win_ptr,int speed_rank)
 {
 	extern int Current_len;
 	int score=Current_len;
 	char speed_string[38];
 	char score_string[38];
 	sprintf(score_string,"Current Score = %d",score);
-	sprintf(speed_string,"Current Speed = %10.5lf",speed);
+	sprintf(speed_string,"Current Speed level = %d",speed_rank);
 	wclear(win_ptr);
 	box(win_ptr,ACS_VLINE,ACS_HLINE);
 	mvwprintw(win_ptr,WINDOW_HEIGHT/6,WINDOW_WIDTH/3,"%s",score_string);
 	mvwprintw(win_ptr,WINDOW_HEIGHT/3,WINDOW_WIDTH/3,"%s",speed_string);
 	wrefresh(win_ptr);
+}
+void Checkmap(snake greedy)
+{
+	extern bool Map[WINDOW_HEIGHT-2][WINDOW_WIDTH-2];
+	extern int Current_len;
+	int index_x,index_y,i;
+	for(index_y=0;index_y<WINDOW_HEIGHT-2;index_y++)
+		for(index_x=0;index_x<WINDOW_WIDTH-2;index_x++)
+			Map[index_y][index_x]=true;
+	for(i=0;i<Current_len;i++)
+	{
+		Map[greedy[i].y-1][greedy[i].x-1]=false;
+	}
+
 }
 void update_snake(snake greedy,direct d,bool *eated)
 {
@@ -197,18 +211,15 @@ void update_snake(snake greedy,direct d,bool *eated)
 		greedy[i]=greedy[i-1];
 	}
 	greedy[0]=temp;
-
-	for(i=0;i<Current_len;i++)
-	{
-		Map[greedy[i].y-1][greedy[i].x-1]=false;
-	}
+	Checkmap(greedy);
 }
-void init_keyboard(void)
+void init_keyboard(WINDOW *w_ptr)
 {
 	keypad(stdscr,true);
 	noecho();
 	cbreak();
-	timeout(1000);
+	leaveok(w_ptr,true);
+	timeout(SPEED_MAX);
 }
 void get_key(direct *d)
 {
@@ -256,12 +267,13 @@ void get_key(direct *d)
 			}
 		}
 }
-void close_keyboard(void)
+void close_keyboard(WINDOW *w_ptr)
 {
 	keypad(stdscr,false);
 	echo();
 	timeout(-1);
 	nocbreak();
+	leaveok(w_ptr,false);
 }
 bool Eatfood(snake greedy,food f1)
 {

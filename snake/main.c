@@ -6,22 +6,21 @@
 
 bool Cheat=false;
 int Current_len=2;
-bool Map[WINDOW_HEIGHT-2][WINDOW_WIDTH-2]={{true}};
+bool Map[WINDOW_HEIGHT-2][WINDOW_WIDTH-2];
 int main(int argc,char *argv[])
 {
 	srand(time(0));
 	bool flag=false;
+	int key;
+	food f;
 	direct d={1,0};
-	int key,index_x,index_y;
 	snake greedy=malloc(sizeof(food)*TOTLE_POINT);
 	greedy[0].x=2;
 	greedy[0].y=1;
 	greedy[1].x=1;
 	greedy[1].y=1;
-	food f={3,3};
-	for(index_y=0;index_y<WINDOW_HEIGHT-2;index_y++)
-		for(index_x=0;index_x<WINDOW_WIDTH;index_x++)
-			Map[index_y][index_x]=true;
+	Checkmap(greedy);
+	Createfood(&f);
 //参数处理
 	int command_result;
 	if(argc>1)
@@ -89,11 +88,12 @@ int main(int argc,char *argv[])
 	box(status_win,ACS_VLINE,ACS_HLINE);
 	draw_select_window(instructions_win,instructions,-1,1,1);
 
-	init_keyboard();
+	init_keyboard(select_win);
 
 	while(true)
 	{
-		draw_status_window(status_win,1.0003);
+		timeout(SPEED_MAX-(Current_len/35)*50);//改变速度
+		draw_status_window(status_win,(Current_len/35));
 		draw_snake_window(select_win,greedy,f);
 		get_key(&d);
 		if(Isover(greedy))
@@ -108,7 +108,7 @@ int main(int argc,char *argv[])
 		update_snake(greedy,d,&flag);
 	}
 
-	close_keyboard();
+	close_keyboard(select_win);
 
 	getchar();
 	delwin(select_win);
