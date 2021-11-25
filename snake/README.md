@@ -1,1 +1,7 @@
-## 一个运行于终端的贪食蛇程序，界面主要依赖curses库，将可以保存得分排行榜依赖gdbm库.
+## 一个运行于linux终端的贪食蛇程序
+## 依赖
+curses库、gdbm库
+## 编译
+&emsp;make main
+## 清理
+&emsp;make clean

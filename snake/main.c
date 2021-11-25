@@ -8,9 +8,25 @@ bool Cheat=false;
 int Current_len=2;
 bool Map[WINDOW_HEIGHT-2][WINDOW_WIDTH-2];
 int main(int argc,char *argv[])
-{
+{	
+	char *start_menu[]=
+	{
+		"new game",
+		"load game",
+		"delete data",
+		"quit",
+		0
+	};
+	char *instructions[]=
+	{
+		"use up/down/left/right",
+		"or w/s/a/d",
+		"to control the snake",
+		"Esc to save/end the game",
+		0
+	};
 	srand(time(0));
-	bool flag=false;
+	bool eatedfood=false;
 	int key;
 	food f;
 	direct d={1,0};
@@ -29,27 +45,11 @@ int main(int argc,char *argv[])
 		if(command_result)
 			exit(command_result);
 	}
+//开始界面
 	initscr();
 	box(stdscr,ACS_VLINE,ACS_HLINE);
 	mvprintw(1,COLS/2-7,"%s","Greedy Snake");
 	refresh();
-	char *start_menu[]=
-	{
-		"new game",
-		"load game",
-		"delete data",
-		"quit",
-		0
-	};
-	char *instructions[]=
-	{
-		"use up/down/left/right",
-		"or w/s/a/d",
-		"to control the snake",
-		"Esc to save/end the game",
-		0
-	};
-//开始界面
 	WINDOW *start_rank_win=newwin(WINDOW_HEIGHT,WINDOW_WIDTH,(LINES-WINDOW_HEIGHT)/2,COLS/2+3);
 	WINDOW *select_win=newwin(WINDOW_HEIGHT,WINDOW_WIDTH,2,6);
 	box(start_rank_win,ACS_VLINE,ACS_HLINE);
@@ -81,7 +81,8 @@ int main(int argc,char *argv[])
 	mvprintw(1,COLS/2-7,"%s","Greedy Snake");
 	refresh();
 
-//游戏界面，现在select_win作为游戏窗口
+//游戏界面
+//现在select_win作为游戏窗口
 	WINDOW *instructions_win=newwin(WINDOW_HEIGHT/2,WINDOW_WIDTH,(LINES-WINDOW_HEIGHT)/2,COLS/2+3);
 	WINDOW *status_win=newwin(WINDOW_HEIGHT/2,WINDOW_WIDTH,LINES/2,COLS/2+3);
 	box(instructions_win,ACS_VLINE,ACS_HLINE);
@@ -103,9 +104,9 @@ int main(int argc,char *argv[])
 		if(Eatfood(greedy,f))
 		{
 			Createfood(&f);
-			flag=true;
+			eatedfood=true;
 		}
-		update_snake(greedy,d,&flag);
+		update_snake(greedy,d,&eatedfood);
 	}
 
 	close_keyboard(select_win);
@@ -117,5 +118,6 @@ int main(int argc,char *argv[])
 
 
 	endwin();
+	free(greedy);
 	exit(EXIT_SUCCESS);
 }
