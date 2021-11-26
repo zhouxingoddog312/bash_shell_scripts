@@ -5,10 +5,10 @@
 #include "data.h"
 
 bool Cheat=false;
-int Current_len=2;
+int Current_len;
 bool Map[WINDOW_HEIGHT-2][WINDOW_WIDTH-2];
 int main(int argc,char *argv[])
-{	
+{
 	char *start_menu[]=
 	{
 		"new game",
@@ -26,17 +26,13 @@ int main(int argc,char *argv[])
 		0
 	};
 	srand(time(0));
+	snake greedy;
+	greedy=malloc(sizeof(food)*TOTLE_POINT);
 	bool eatedfood=false;
 	int key;
 	food f;
-	direct d={1,0};
-	snake greedy=malloc(sizeof(food)*TOTLE_POINT);
-	greedy[0].x=2;
-	greedy[0].y=1;
-	greedy[1].x=1;
-	greedy[1].y=1;
-	Checkmap(greedy);
-	Createfood(&f);
+	direct d;
+	char name[STR_LEN];
 //参数处理
 	int command_result;
 	if(argc>1)
@@ -47,13 +43,9 @@ int main(int argc,char *argv[])
 	}
 //开始界面
 	initscr();
-	box(stdscr,ACS_VLINE,ACS_HLINE);
-	mvprintw(1,COLS/2-7,"%s","Greedy Snake");
-	refresh();
+	draw_base_window();
 	WINDOW *start_rank_win=newwin(WINDOW_HEIGHT,WINDOW_WIDTH,(LINES-WINDOW_HEIGHT)/2,COLS/2+3);
 	WINDOW *select_win=newwin(WINDOW_HEIGHT,WINDOW_WIDTH,2,6);
-	box(start_rank_win,ACS_VLINE,ACS_HLINE);
-	box(select_win,ACS_VLINE,ACS_HLINE);
 	draw_select_window(start_rank_win,start_menu,-1,1,1);
 	do
 	{
@@ -62,6 +54,7 @@ int main(int argc,char *argv[])
 		{
 			case 'n':
 				/*设置新的初始状态*/
+				init_status(select_win,&d,&f,greedy,name);
 				command_result='g';
 				break;
 			case 'l':
@@ -76,31 +69,31 @@ int main(int argc,char *argv[])
 		}
 	}while(command_result!='g');
 	delwin(start_rank_win);
-	clear();
-	box(stdscr,ACS_VLINE,ACS_HLINE);
-	mvprintw(1,COLS/2-7,"%s","Greedy Snake");
-	refresh();
-
+	draw_base_window();
 //游戏界面
 //现在select_win作为游戏窗口
 	WINDOW *instructions_win=newwin(WINDOW_HEIGHT/2,WINDOW_WIDTH,(LINES-WINDOW_HEIGHT)/2,COLS/2+3);
 	WINDOW *status_win=newwin(WINDOW_HEIGHT/2,WINDOW_WIDTH,LINES/2,COLS/2+3);
-	box(instructions_win,ACS_VLINE,ACS_HLINE);
-	box(status_win,ACS_VLINE,ACS_HLINE);
-	draw_select_window(instructions_win,instructions,-1,1,1);
+	draw_select_window(instructions_win,instructions,-1,1,WINDOW_WIDTH/4);
 
 	init_keyboard(select_win);
 
 	while(true)
 	{
 		timeout(SPEED_MAX-(Current_len/35)*50);//改变速度
-		draw_status_window(status_win,(Current_len/35));
+		draw_status_window(status_win,name);
 		draw_snake_window(select_win,greedy,f);
 		get_key(&d);
 		if(Isover(greedy))
-			;
+		{
+			end_game(select_win,"Game Over!");
+			break;
+		}
 		if(Iswin())
-			;
+		{
+			end_game(select_win,"You Win!");
+			break;
+		}
 		if(Eatfood(greedy,f))
 		{
 			Createfood(&f);
@@ -111,13 +104,12 @@ int main(int argc,char *argv[])
 
 	close_keyboard(select_win);
 
-	getchar();
 	delwin(select_win);
 	delwin(instructions_win);
 	delwin(status_win);
 
 
 	endwin();
-	free(greedy);
+	destory_status(greedy);
 	exit(EXIT_SUCCESS);
 }

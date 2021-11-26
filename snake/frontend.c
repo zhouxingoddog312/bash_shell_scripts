@@ -1,6 +1,4 @@
 #define _GNU_SOURCE
-#include <getopt.h>
-#include <stdio.h>
 #include "data.h"
 
 //用于参数模式的函数声明
@@ -74,11 +72,81 @@ int command_mode(int argc,char *argv[])
 	}
 	return result;
 }
-
-
+//用于游戏逻辑的函数定义
+void init_status(WINDOW *win_ptr,direct *d_ptr,food *f_ptr,snake greedy,char *name)
+{
+	char *prompt[]=
+	{
+		"enter your name: ",
+		0
+	};
+	extern int Current_len;
+	int seed;
+	seed=rand()%4;
+	switch(seed)//随机产生初始方向
+	{
+		case 0:
+			d_ptr->x=0;
+			d_ptr->y=-1;
+			break;
+		case 1:
+			d_ptr->x=0;
+			d_ptr->y=1;
+			break;
+		case 2:
+			d_ptr->x=-1;
+			d_ptr->y=0;
+			break;
+		case 3:
+			d_ptr->x=1;
+			d_ptr->y=0;
+			break;
+	}
+	Current_len=0;
+	Checkmap(greedy);
+	while(true)//产生一个不靠边框的蛇头
+	{
+		Createfood(&greedy[0]);
+		if(greedy[0].x>1&&greedy[0].x<COLS-2&&greedy[0].y>1&&greedy[0].y<LINES-2)
+			break;
+	}
+	greedy[1].x=greedy[0].x-d_ptr->x;
+	greedy[1].y=greedy[0].y-d_ptr->y;
+	Current_len=2;
+	Checkmap(greedy);
+	Createfood(f_ptr);
+	move(LINES-2,1);
+	clrtoeol();
+	mvprintw(LINES-2,1,"touch enter to save your name.");
+	refresh();
+	draw_select_window(win_ptr,prompt,-1,WINDOW_HEIGHT/2-1,WINDOW_WIDTH/2-10);
+	wgetnstr(win_ptr,name,STR_LEN-1);
+}
+void destory_status(snake greedy)
+{
+	free(greedy);
+}
+void end_game(WINDOW *win_ptr,char *string)
+{
+	wclear(win_ptr);
+	box(win_ptr,ACS_VLINE,ACS_HLINE);
+	mvwprintw(win_ptr,WINDOW_HEIGHT/2-1,WINDOW_WIDTH/2-10,"%s",string);
+	wrefresh(win_ptr);
+	/*存储得分榜*/
+	sleep(2);
+}
 //用于开始界面的函数定义
+void draw_base_window(void)
+{
+	clear();
+	box(stdscr,ACS_VLINE,ACS_HLINE);
+	mvprintw(1,COLS/2-7,"%s","Greedy Snake");
+	refresh();
+}
 void draw_select_window(WINDOW *win_ptr,char *options[],int current_highlight,int start_row,int start_col)
 {/*不想有高亮显示时将current_highlight设为-1*/
+	wclear(win_ptr);
+	box(win_ptr,ACS_VLINE,ACS_HLINE);
 	int current_row=0;
 	char **option_ptr;
 	char *txt_ptr;
@@ -164,18 +232,19 @@ void draw_snake_window(WINDOW *win_ptr,snake greedy,food f1)
 	}
 	wrefresh(win_ptr);
 }
-void draw_status_window(WINDOW *win_ptr,int speed_rank)
+void draw_status_window(WINDOW *win_ptr,char *name)
 {
 	extern int Current_len;
 	int score=Current_len;
-	char speed_string[38];
-	char score_string[38];
+	char speed_string[STR_LEN];
+	char score_string[STR_LEN];
 	sprintf(score_string,"Current Score = %d",score);
-	sprintf(speed_string,"Current Speed level = %d",speed_rank);
+	sprintf(speed_string,"Current Speed level = %d",(Current_len/35));
 	wclear(win_ptr);
 	box(win_ptr,ACS_VLINE,ACS_HLINE);
-	mvwprintw(win_ptr,WINDOW_HEIGHT/6,WINDOW_WIDTH/3,"%s",score_string);
-	mvwprintw(win_ptr,WINDOW_HEIGHT/3,WINDOW_WIDTH/3,"%s",speed_string);
+	mvwprintw(win_ptr,WINDOW_HEIGHT/9,WINDOW_WIDTH/4,"Hello %s",name);
+	mvwprintw(win_ptr,WINDOW_HEIGHT/5,WINDOW_WIDTH/4,"%s",score_string);
+	mvwprintw(win_ptr,WINDOW_HEIGHT/3,WINDOW_WIDTH/4,"%s",speed_string);
 	wrefresh(win_ptr);
 }
 void Checkmap(snake greedy)
@@ -286,7 +355,7 @@ bool Isover(snake greedy)
 {
 	extern int Current_len;
 	bool flag=false;
-	if(greedy[0].x==0||greedy[0].x==(COLS-1)||greedy[0].y==0||greedy[0].y==(LINES-1))
+	if(greedy[0].x==0||greedy[0].x==(WINDOW_WIDTH-1)||greedy[0].y==0||greedy[0].y==(WINDOW_HEIGHT-1))
 		flag=true;
 	for(int i=1;i<Current_len;i++)
 	{

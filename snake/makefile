@@ -9,8 +9,8 @@ main:
 	$(CC) $(INCLUDE) main.c frontend.c $(LDFLAGS) -o $@
 
 debug:
-
+	$(CC) -g $(INCLUDE) main.c frontend.c $(LDFLAGS) -o $@
 install:
 
 clean:
-	$(RM) a.out main
+	$(RM) a.out main debug
