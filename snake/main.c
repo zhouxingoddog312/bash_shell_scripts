@@ -83,7 +83,6 @@ int main(int argc,char *argv[])
 		timeout(SPEED_MAX-(Current_len/35)*50);//改变速度
 		draw_status_window(status_win,name);
 		draw_snake_window(select_win,greedy,f);
-		get_key(&d);
 		if(Isover(greedy))
 		{
 			end_game(select_win,"Game Over!");
@@ -99,6 +98,7 @@ int main(int argc,char *argv[])
 			Createfood(&f);
 			eatedfood=true;
 		}
+		get_key(&d);
 		update_snake(greedy,d,&eatedfood);
 	}
 
