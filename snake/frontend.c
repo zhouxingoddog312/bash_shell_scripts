@@ -5,6 +5,7 @@
 static void version(void);
 static void help(void);
 static void opt_error(char c);
+static void cheat(bool *Cheat);
 
 //用于开始界面的函数声明
 
@@ -27,14 +28,12 @@ static void opt_error(char c)
 {
 	fprintf(stderr,"unknown option: %c\nplease use snake --help to get more information\n",c);
 }
-static void cheat(void)
+static void cheat(bool *Cheat)
 {
-	extern bool Cheat;
-	Cheat=true;
+	*Cheat=true;
 }
-int command_mode(int argc,char *argv[])
+int command_mode(int argc,char *argv[],bool *Cheat)
 {
-	extern bool Cheat;
 	int result=0,opt;
 	struct option longopts[]=
 	{
@@ -61,7 +60,7 @@ int command_mode(int argc,char *argv[])
 				result=0;
 				break;
 			case 'c':
-				cheat();
+				cheat(Cheat);
 				result=0;
 				break;
 			case '?':
@@ -73,14 +72,13 @@ int command_mode(int argc,char *argv[])
 	return result;
 }
 //用于游戏逻辑的函数定义
-void init_status(WINDOW *win_ptr,direct *d_ptr,food *f_ptr,snake greedy,char *name)
+void init_status(WINDOW *win_ptr,direct *d_ptr,food *f_ptr,snake greedy,bool Map[][WINDOW_WIDTH-2],char *name,int *Current_len)
 {
 	char *prompt[]=
 	{
 		"enter your name: ",
 		0
 	};
-	extern int Current_len;
 	int seed;
 	seed=rand()%4;
 	switch(seed)//随机产生初始方向
@@ -102,19 +100,19 @@ void init_status(WINDOW *win_ptr,direct *d_ptr,food *f_ptr,snake greedy,char *na
 			d_ptr->y=0;
 			break;
 	}
-	Current_len=0;
-	Checkmap(greedy);
+	*Current_len=0;
+	Checkmap(greedy,*Current_len,Map);
 	while(true)//产生一个不靠边框的蛇头
 	{
-		Createfood(&greedy[0]);
+		Createfood(&greedy[0],*Current_len,Map);
 		if(greedy[0].x>1&&greedy[0].x<COLS-2&&greedy[0].y>1&&greedy[0].y<LINES-2)
 			break;
 	}
 	greedy[1].x=greedy[0].x-d_ptr->x;
 	greedy[1].y=greedy[0].y-d_ptr->y;
-	Current_len=2;
-	Checkmap(greedy);
-	Createfood(f_ptr);
+	*Current_len=2;
+	Checkmap(greedy,*Current_len,Map);
+	Createfood(f_ptr,*Current_len,Map);
 	move(LINES-2,1);
 	clrtoeol();
 	mvprintw(LINES-2,1,"touch enter to save your name.");
@@ -217,9 +215,8 @@ int getchoice(WINDOW *win_ptr,char *choices[])
 
 
 //用于游戏界面的函数定义
-void draw_snake_window(WINDOW *win_ptr,snake greedy,food f1)
+void draw_snake_window(WINDOW *win_ptr,snake greedy,food f1,int Current_len)
 {
-	extern int Current_len;
 	wclear(win_ptr);
 	box(win_ptr,ACS_VLINE,ACS_HLINE);
 	mvwaddch(win_ptr,f1.y,f1.x,'@');
@@ -232,9 +229,8 @@ void draw_snake_window(WINDOW *win_ptr,snake greedy,food f1)
 	}
 	wrefresh(win_ptr);
 }
-void draw_status_window(WINDOW *win_ptr,char *name)
+void draw_status_window(WINDOW *win_ptr,char *name,int Current_len)
 {
-	extern int Current_len;
 	int score=Current_len;
 	char speed_string[STR_LEN];
 	char score_string[STR_LEN];
@@ -247,10 +243,8 @@ void draw_status_window(WINDOW *win_ptr,char *name)
 	mvwprintw(win_ptr,WINDOW_HEIGHT/3,WINDOW_WIDTH/4,"%s",speed_string);
 	wrefresh(win_ptr);
 }
-void Checkmap(snake greedy)
+void Checkmap(snake greedy,int Current_len,bool Map[][WINDOW_WIDTH-2])
 {
-	extern bool Map[WINDOW_HEIGHT-2][WINDOW_WIDTH-2];
-	extern int Current_len;
 	int index_x,index_y,i;
 	for(index_y=0;index_y<WINDOW_HEIGHT-2;index_y++)
 		for(index_x=0;index_x<WINDOW_WIDTH-2;index_x++)
@@ -261,26 +255,24 @@ void Checkmap(snake greedy)
 	}
 
 }
-void update_snake(snake greedy,direct d,bool *eated)
+void update_snake(snake greedy,direct d,int *Current_len,bool Map[][WINDOW_WIDTH-2],bool *eated)
 {
-	extern bool Map[WINDOW_HEIGHT-2][WINDOW_WIDTH-2];
-	extern int Current_len;
 	int i;
 	if(*eated)
 	{
-		Current_len++;
+		(*Current_len)++;
 		*eated=false;
 	}
 	node temp;
 	temp=greedy[0];
 	temp.x+=d.x;
 	temp.y+=d.y;
-	for(i=Current_len-1;i>0;i--)
+	for(i=*Current_len-1;i>0;i--)
 	{
 		greedy[i]=greedy[i-1];
 	}
 	greedy[0]=temp;
-	Checkmap(greedy);
+	Checkmap(greedy,*Current_len,Map);
 }
 void init_keyboard(WINDOW *w_ptr)
 {
@@ -351,9 +343,8 @@ bool Eatfood(snake greedy,food f1)
 	else
 		return false;
 }
-bool Isover(snake greedy)
+bool Isover(snake greedy,int Current_len)
 {
-	extern int Current_len;
 	bool flag=false;
 	if(greedy[0].x==0||greedy[0].x==(WINDOW_WIDTH-1)||greedy[0].y==0||greedy[0].y==(WINDOW_HEIGHT-1))
 		flag=true;
@@ -364,19 +355,16 @@ bool Isover(snake greedy)
 	}
 	return flag;
 }
-bool Iswin(void)
+bool Iswin(int Current_len)
 {
-	extern int Current_len;
 	if(Current_len==TOTLE_POINT)
 		return true;
 	else
 		return false;
 }
-void Createfood(food *fd)
+void Createfood(food *fd,int Current_len,bool Map[][WINDOW_WIDTH-2])
 {
 	int index_x=0,index_y=0;
-	extern bool Map[WINDOW_HEIGHT-2][WINDOW_WIDTH-2];
-	extern int Current_len;
 	int residue=TOTLE_POINT-Current_len;
 	int count=0;
 	count=rand()%residue+1;
