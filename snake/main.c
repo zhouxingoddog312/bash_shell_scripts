@@ -44,8 +44,8 @@ int main(int argc,char *argv[])
 //开始界面
 	initscr();
 	draw_base_window();
-	WINDOW *start_rank_win=newwin(WINDOW_HEIGHT,WINDOW_WIDTH,(LINES-WINDOW_HEIGHT)/2,COLS/2+3);
-	WINDOW *select_win=newwin(WINDOW_HEIGHT,WINDOW_WIDTH,2,6);
+	WINDOW *start_rank_win=newwin(WINDOW_HEIGHT,WINDOW_WIDTH,(LINES-WINDOW_HEIGHT)/2,(COLS-WINDOW_WIDTH*2)/3*2+WINDOW_WIDTH);
+	WINDOW *select_win=newwin(WINDOW_HEIGHT,WINDOW_WIDTH,(LINES-WINDOW_HEIGHT)/2,(COLS-WINDOW_WIDTH*2)/3);
 	draw_select_window(start_rank_win,start_menu,-1,1,1);
 	do
 	{
@@ -72,8 +72,8 @@ int main(int argc,char *argv[])
 	draw_base_window();
 //游戏界面
 //现在select_win作为游戏窗口
-	WINDOW *instructions_win=newwin(WINDOW_HEIGHT/2,WINDOW_WIDTH,(LINES-WINDOW_HEIGHT)/2,COLS/2+3);
-	WINDOW *status_win=newwin(WINDOW_HEIGHT/2,WINDOW_WIDTH,LINES/2,COLS/2+3);
+	WINDOW *instructions_win=newwin(WINDOW_HEIGHT/2,WINDOW_WIDTH,(LINES-WINDOW_HEIGHT)/2,(COLS-WINDOW_WIDTH*2)/3*2+WINDOW_WIDTH);
+	WINDOW *status_win=newwin(WINDOW_HEIGHT/2,WINDOW_WIDTH,LINES/2,(COLS-WINDOW_WIDTH*2)/3*2+WINDOW_WIDTH);
 	draw_select_window(instructions_win,instructions,-1,1,WINDOW_WIDTH/4);
 
 	init_keyboard(select_win);
