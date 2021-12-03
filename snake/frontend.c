@@ -7,7 +7,6 @@ static void help(void);
 static void opt_error(char c);
 static void cheat(bool *Cheat);
 
-//用于开始界面的函数声明
 
 
 //用于参数模式的函数定义

@@ -1,6 +1,6 @@
 .PHONY:all debug install clean
-LDFLAGS=-lcurses
-INCLUDE=-I/usr/include/gdbm
+LDFLAGS=-lcurses -lgdbm
+INCLUDE=-I/usr/local/include -L/usr/local/lib
 
 
 all:

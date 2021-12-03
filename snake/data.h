@@ -5,7 +5,7 @@
 #include <curses.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#include <ndbm.h>
+#include <gdbm.h>
 #include <getopt.h>
 #include <stdio.h>
 #define WINDOW_WIDTH 40
@@ -13,6 +13,10 @@
 #define TOTLE_POINT ((WINDOW_WIDTH-2)*(WINDOW_HEIGHT-2))
 #define SPEED_MAX 1000
 #define STR_LEN 38
+#define MAX_RANK_RECORD 9
+
+#define RANK_FILE "rank.db"
+#define SAVEDATA_FILE "save_data.db"
 
 #define VERSION ("1.00")
 
@@ -26,7 +30,29 @@ typedef node food;
 typedef node direct;
 typedef node *snake;
 
-//存档数据和得分榜数据处理函数
+typedef struct
+{
+	snake save_greedy[TOTLE_POINT];
+	char save_name[STR_LEN];
+	food save_f;
+	direct save_d;
+}save_data_entry;
+typedef struct
+{
+	char rank_name[STR_LEN];
+	int rank_point;
+}rank_entry;
+//数据库函数
+int rank_db_init(bool new_database);
+void rank_db_close(void);
+rank_entry get_rank_entry(int index);
+void add_rank_entry(rank_entry entry_add,int index);
+
+
+//得分榜数据处理函数
+
+
+
 
 
 
