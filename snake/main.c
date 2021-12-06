@@ -40,12 +40,16 @@ int main(int argc,char *argv[])
 		if(command_result)
 			exit(command_result);
 	}
+	rank_db_init(false);
 //开始界面
+
 	initscr();
 	draw_base_window();
 	WINDOW *start_rank_win=newwin(WINDOW_HEIGHT,WINDOW_WIDTH,(LINES-WINDOW_HEIGHT)/2,(COLS-WINDOW_WIDTH*2)/3*2+WINDOW_WIDTH);
 	WINDOW *select_win=newwin(WINDOW_HEIGHT,WINDOW_WIDTH,(LINES-WINDOW_HEIGHT)/2,(COLS-WINDOW_WIDTH*2)/3);
-	draw_select_window(start_rank_win,start_menu,-1,1,1);
+	
+	print_rank(start_rank_win);
+
 	do
 	{
 		command_result=getchoice(select_win,start_menu);
@@ -64,6 +68,8 @@ int main(int argc,char *argv[])
 				/*删除存档*/
 				break;
 			case 'q':
+				endwin();
+				destory_status(greedy);
 				exit(EXIT_SUCCESS);
 		}
 	}while(command_result!='g');

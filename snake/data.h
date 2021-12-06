@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <curses.h>
 #include <stdlib.h>
+#include <string.h>
 #include <stdbool.h>
 #include <gdbm.h>
 #include <getopt.h>
@@ -50,8 +51,9 @@ void add_rank_entry(rank_entry entry_add,int index);
 
 
 //得分榜数据处理函数
+void print_rank(WINDOW *win_ptr);
 
-
+//存档数据处理函数
 
 
 

@@ -56,6 +56,7 @@ int command_mode(int argc,char *argv[],bool *Cheat)
 				break;
 			case 'i':
 				/*删除旧的得分榜数据库文件，创建新的*/
+				rank_db_init(true);
 				result=0;
 				break;
 			case 'c':
