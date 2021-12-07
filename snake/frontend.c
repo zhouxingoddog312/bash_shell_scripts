@@ -124,13 +124,14 @@ void destory_status(snake greedy)
 {
 	free(greedy);
 }
-void end_game(WINDOW *win_ptr,char *string)
+void end_game(WINDOW *win_ptr,char *string,char *name,int point)
 {
 	wclear(win_ptr);
 	box(win_ptr,ACS_VLINE,ACS_HLINE);
 	mvwprintw(win_ptr,WINDOW_HEIGHT/2-1,WINDOW_WIDTH/2-10,"%s",string);
 	wrefresh(win_ptr);
 	/*存储得分榜*/
+	save_rank(name,point);
 	sleep(2);
 }
 //用于开始界面的函数定义

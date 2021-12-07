@@ -90,12 +90,12 @@ int main(int argc,char *argv[])
 		draw_snake_window(select_win,greedy,f,Current_len);
 		if((!Cheat)&&Isover(greedy,Current_len))
 		{
-			end_game(select_win,"Game Over!");
+			end_game(select_win,"Game Over!",name,Current_len);
 			break;
 		}
 		if(Iswin(Current_len))
 		{
-			end_game(select_win,"You Win!");
+			end_game(select_win,"You Win!",name,Current_len);
 			break;
 		}
 		if(Eatfood(greedy,f))

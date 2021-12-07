@@ -1,6 +1,15 @@
 #include "data.h"
 static GDBM_FILE rank_db_ptr=NULL;
 static GDBM_FILE savedata_db_ptr=NULL;
+static int cmprank(const void *p1,const void *p2);
+
+
+
+
+static int cmprank(const void *p1,const void *p2)
+{
+	return (*(rank_entry *)p2).rank_point-(*(rank_entry *)p1).rank_point;
+}
 //得分榜数据处理函数
 int rank_db_init(bool new_database)
 {
@@ -47,34 +56,62 @@ void print_rank(WINDOW *win_ptr)
 {
 	wclear(win_ptr);
 	box(win_ptr,ACS_VLINE,ACS_HLINE);
-
 	char rank_list[MAX_RANK_RECORD][STR_LEN];
-
 	rank_entry temp_data;
-	int temp_key;
+	int count;
 	int index=0;
-	int startrow=1;
-	datum key,data;
-	key=gdbm_firstkey(rank_db_ptr);
-	while(key.dptr!=NULL)
+	int startrow=2;
+	int startcol=8;
+	gdbm_count(rank_db_ptr,(gdbm_count_t *)&count);
+	for(index=1;index<=count;index++)
 	{
-		data=gdbm_fetch(rank_db_ptr,key);
-		memcpy(&temp_data,data.dptr,data.dsize);
-		memcpy(&temp_key,key.dptr,key.dsize);
-		sprintf(rank_list[index],"%d %s %d",temp_key,temp_data.rank_name,temp_data.rank_point);
-		index++;
-		key=gdbm_nextkey(rank_db_ptr,key);
+		temp_data=get_rank_entry(index);
+		sprintf(rank_list[index-1],"%d -- name:%s\tscore:%d",index,temp_data.rank_name,temp_data.rank_point);
 	}
-	if(index==0)
-		mvwprintw(win_ptr,WINDOW_HEIGHT/2,1,"There are no rank list.");
+	if(count==0)
+		mvwprintw(win_ptr,WINDOW_HEIGHT/2,startcol,"There are no rank list.");
 	else
 	{
-		for(int i=0;i<index;i++)
+		for(int i=0;i<count;i++)
 		{
-			mvwprintw(win_ptr,startrow,1,"%s",rank_list[i]);
+			mvwprintw(win_ptr,startrow,startcol,"%s",rank_list[i]);
 			startrow+=2;
 		}
 	}
 	wrefresh(win_ptr);
+}
+void save_rank(char *name,int point)
+{
+	int count;
+	int index=0;
+	datum key,data;
+	rank_entry *array;
+	rank_entry temp;
+	strncpy(temp.rank_name,name,STR_LEN);
+	temp.rank_point=point;
+	gdbm_count(rank_db_ptr,(gdbm_count_t *)&count);
+	if(count<MAX_RANK_RECORD)
+		count+=1;
+	else
+		count=MAX_RANK_RECORD;
+	array=malloc(sizeof(rank_entry)*count);
+
+	key=gdbm_firstkey(rank_db_ptr);
+	while(key.dptr!=NULL)
+	{
+		data=gdbm_fetch(rank_db_ptr,key);
+		memcpy(&array[index],data.dptr,data.dsize);
+		index++;
+		key=gdbm_nextkey(rank_db_ptr,key);
+	}
+	array[count-1]=temp;
+	qsort(array,count,sizeof(rank_entry),cmprank);
+	rank_db_init(true);
+	for(index=0;index<count;index++)
+	{
+		add_rank_entry(array[index],index+1);
+	}
+
+	rank_db_close();
 }
 //存档数据处理函数
