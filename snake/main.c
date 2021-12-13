@@ -103,11 +103,58 @@ int main(int argc,char *argv[])
 			Createfood(&f,Current_len,Map);
 			eatedfood=true;
 		}
-		get_key(&d);
+
+		if((key=getch())!=ERR)
+			{
+				switch(key)
+				{
+					case 'A':
+					case 'a':
+					case KEY_LEFT:
+						if(d.x!=1)
+						{
+							d.x=-1;
+							d.y=0;
+						}
+						break;
+					case 'D':
+					case 'd':
+					case KEY_RIGHT:
+						if(d.x!=-1)
+						{
+							d.x=1;
+							d.y=0;
+						}
+						break;
+					case 'W':
+					case 'w':
+					case KEY_UP:
+						if(d.y!=1)
+						{
+							d.x=0;
+							d.y=-1;
+						}
+						break;
+					case 'S':
+					case 's':
+					case KEY_DOWN:
+						if(d.y!=-1)
+						{
+							d.x=0;
+							d.y=1;
+						}
+						break;
+					case 10/*Enter键*/:
+					case 27/*Esc键*/:
+						/*存入存档*/
+						goto endgame;					
+				}
+			}
+
 		update_snake(greedy,d,&Current_len,Map,&eatedfood);
 	}
 
-	close_keyboard(select_win);
+	endgame:close_keyboard(select_win);
 
 	delwin(select_win);
 	delwin(instructions_win);

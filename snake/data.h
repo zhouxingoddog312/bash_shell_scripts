@@ -37,6 +37,7 @@ typedef struct
 	char save_name[STR_LEN];
 	food save_f;
 	direct save_d;
+	int snake_len;
 }save_data_entry;
 typedef struct
 {
@@ -77,7 +78,6 @@ void draw_snake_window(WINDOW *win_ptr,snake greedy,food f1,int Current_len);
 void draw_status_window(WINDOW *win_ptr,char *name,int Current_len);
 void update_snake(snake greedy,direct d,int *Current_len,bool Map[][WINDOW_WIDTH-2],bool *eated);
 void init_keyboard(WINDOW *w_ptr);
-void get_key(direct *d);
 void close_keyboard(WINDOW *w_ptr);
 bool Eatfood(snake greedy,food f1);
 bool Isover(snake greedy,int Current_len);

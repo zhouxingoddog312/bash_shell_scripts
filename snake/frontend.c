@@ -283,52 +283,6 @@ void init_keyboard(WINDOW *w_ptr)
 	leaveok(w_ptr,true);
 	timeout(SPEED_MAX);
 }
-void get_key(direct *d)
-{
-	int key;
-	if((key=getch())!=ERR)
-		{
-			switch(key)
-			{
-				case 'A':
-				case 'a':
-				case KEY_LEFT:
-					if(d->x!=1)
-					{
-						d->x=-1;
-						d->y=0;
-					}
-					break;
-				case 'D':
-				case 'd':
-				case KEY_RIGHT:
-					if(d->x!=-1)
-					{
-						d->x=1;
-						d->y=0;
-					}
-					break;
-				case 'W':
-				case 'w':
-				case KEY_UP:
-					if(d->y!=1)
-					{
-						d->x=0;
-						d->y=-1;
-					}
-					break;
-				case 'S':
-				case 's':
-				case KEY_DOWN:
-					if(d->y!=-1)
-					{
-						d->x=0;
-						d->y=1;
-					}
-					break;
-			}
-		}
-}
 void close_keyboard(WINDOW *w_ptr)
 {
 	keypad(stdscr,false);
