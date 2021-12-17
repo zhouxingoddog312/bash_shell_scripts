@@ -115,3 +115,85 @@ void save_rank(char *name,int point)
 	rank_db_close();
 }
 //存档数据处理函数
+int save_db_init(bool new_database)
+{
+	if(savedata_db_ptr)
+		gdbm_close(savedata_db_ptr);
+	if(new_database)
+		unlink(SAVEDATA_FILE);
+	savedata_db_ptr=gdbm_open(SAVEDATA_FILE,0,GDBM_WRCREAT|GDBM_SYNC,00640,NULL);
+	if(savedata_db_ptr==NULL)
+	{
+		fprintf(stderr,"Can not open savedata database,\n%s\n",gdbm_strerror(gdbm_errno));
+		return 0;
+	}
+	return 1;
+
+}
+void save_db_close(void)
+{
+	if(savedata_db_ptr)
+		gdbm_close(savedata_db_ptr);
+	savedata_db_ptr=NULL;
+}
+save_entry get_save_entry(int index)
+{
+	save_entry entry_to_return;
+	datum key,data;
+	memset(&entry_to_return,'\0',sizeof(save_entry));
+	key.dptr=(void *)&index;
+	key.dsize=sizeof(int);
+	data=gdbm_fetch(savedata_db_ptr,key);
+	if(data.dptr)
+		memcpy(&entry_to_return,data.dptr,data.dsize);
+	return entry_to_return;
+}
+void add_save_entry(save_entry entry_add,int index)
+{
+	datum key,data;
+	data.dptr=(void *)&entry_add;
+	data.dsize=sizeof(entry_add);
+	key.dptr=(void *)&index;
+	key.dsize=sizeof(index);
+	gdbm_store(savedata_db_ptr,key,data,GDBM_INSERT);
+}
+void force_add_save_entry(save_entry entry_add,int index)
+{
+	datum key,data;
+	data.dptr=(void *)&entry_add;
+	data.dsize=sizeof(entry_add);
+	key.dptr=(void *)&index;
+	key.dsize=sizeof(index);
+	gdbm_store(savedata_db_ptr,key,data,GDBM_REPLACE);
+}
+void del_save_entry(int index)
+{
+	int flag;
+	key.dptr=(void *)&index;
+	key.dsize=sizeof(int);
+	flag=gdbm_delete(savedata_db_ptr,key);
+	if(flag)
+	{
+		move(LINES-2,1);
+		clrtoeol();
+		mvprintw(LINES-2,1,"%s",gdbm_strerror(gdbm_errno));
+	}
+}
+bool save_isfull(void)
+{
+	int count,flag;
+	flag=gdbm_count(rank_db_ptr,(gdbm_count_t *)&count);
+	if(!flag&&(count>=MAX_RANK_RECORD))
+		return true;
+	else
+		return false;
+}
+bool save_isempty(void)
+{
+	int count,flag;
+	flag=gdbm_count(rank_db_ptr,(gdbm_count_t *)&count);
+	if(!flag&&(count>0))
+		return false;
+	else
+		return true;
+}

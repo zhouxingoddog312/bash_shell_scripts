@@ -9,7 +9,6 @@ int main(int argc,char *argv[])
 	{
 		"new game",
 		"load game",
-		"delete data",
 		"quit",
 		0
 	};
@@ -147,7 +146,7 @@ int main(int argc,char *argv[])
 					case 10/*Enter键*/:
 					case 27/*Esc键*/:
 						/*存入存档*/
-						goto endgame;					
+						goto endgame;
 				}
 			}
 

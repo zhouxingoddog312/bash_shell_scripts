@@ -37,8 +37,8 @@ typedef struct
 	char save_name[STR_LEN];
 	food save_f;
 	direct save_d;
-	int snake_len;
-}save_data_entry;
+	int save_snake_len;
+}save_entry;
 typedef struct
 {
 	char rank_name[STR_LEN];
@@ -50,13 +50,21 @@ void rank_db_close(void);
 rank_entry get_rank_entry(int index);
 void add_rank_entry(rank_entry entry_add,int index);
 
+int save_db_init(bool new_database);
+void save_db_close(void);
+save_entry get_save_entry(int index);
+void add_save_entry(save_entry entry_add,int index);
+void force_add_save_entry(save_entry entry_add,int index);
+void del_save_entry(int index);
+bool save_isfull(void);
+bool save_isempty(void);
 
 //得分榜数据处理函数
 void print_rank(WINDOW *win_ptr);
 void save_rank(char *name,int point);
 //存档数据处理函数
-
-
+void load_savedata(WINDOW *win_ptr,direct *d_ptr,food *f_ptr,snake greedy,bool Map[][WINDOW_WIDTH-2],char *name,int *Current_len);
+void save_savedata(WINDOW *win_ptr,direct *d_ptr,food *f_ptr,snake greedy,char *name,int *Current_len);
 
 
 //游戏逻辑函数

@@ -173,7 +173,7 @@ int getchoice(WINDOW *win_ptr,char *choices[])
 {
 	static int selected_row=0;
 	int max_row=0;
-	int start_screenrow=WINDOW_HEIGHT/2-5,start_screencol=WINDOW_WIDTH/2-6;
+	int start_screenrow=WINDOW_HEIGHT/2-2,start_screencol=WINDOW_WIDTH/2-6;
 	char **options;
 	int selected;
 	int key=0;
