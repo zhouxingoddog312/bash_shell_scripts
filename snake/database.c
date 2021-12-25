@@ -3,9 +3,26 @@ static GDBM_FILE rank_db_ptr=NULL;
 static GDBM_FILE savedata_db_ptr=NULL;
 static int cmprank(const void *p1,const void *p2);
 
+static void print_select_entry(WINDOW *win_ptr,char options[][STR_LEN],int opt_count,int current_highlight,int start_row,int start_col);
 
 
 
+
+static void print_select_entry(WINDOW *win_ptr,char options[][STR_LEN],int opt_count,int current_highlight,int start_row,int start_col)
+{
+	int index=0;
+	wclear(win_ptr);
+	box(win_ptr,ACS_VLINE,ACS_HLINE);
+	for(index=0;index<opt_count;index++)
+	{
+		if(index==current_highlight)
+			wattron(win_ptr,A_STANDOUT);
+		mvwprintw(win_ptr,start_row+index*2,start_col,"%s",options[index]);
+		if(index==current_highlight)
+			wattroff(win_ptr,A_STANDOUT);
+	}
+	wrefresh(win_ptr);
+}
 static int cmprank(const void *p1,const void *p2)
 {
 	return (*(rank_entry *)p2).rank_point-(*(rank_entry *)p1).rank_point;
@@ -168,6 +185,7 @@ void force_add_save_entry(save_entry entry_add,int index)
 }
 void del_save_entry(int index)
 {
+	datum key;
 	int flag;
 	key.dptr=(void *)&index;
 	key.dsize=sizeof(int);
@@ -192,8 +210,82 @@ bool save_isempty(void)
 {
 	int count,flag;
 	flag=gdbm_count(rank_db_ptr,(gdbm_count_t *)&count);
-	if(!flag&&(count>0))
+	if(count>0)
 		return false;
 	else
 		return true;
+}
+
+
+
+int load_savedata(WINDOW *win_ptr,direct *d_ptr,food *f_ptr,snake greedy,bool Map[][WINDOW_WIDTH-2],char *name,int *Current_len)
+{
+	save_db_init(false);
+	if(save_isempty())
+		return 1;
+	else
+	{
+		save_entry temp_savedata;
+		int start_screenrow=WINDOW_HEIGHT/2-2,start_screencol=WINDOW_WIDTH/2-6;
+		int index;
+		int count;
+		int key=0;
+		int select;
+		gdbm_count(rank_db_ptr,(gdbm_count_t *)&count);
+		char save_entry_strings[count][STR_LEN];
+		for(index=0;index<count;index++)
+		{
+			temp_savedata=get_save_entry(index+1);
+			sprintf(save_entry_strings[index],"%d\tname:%s\tsnake_len:%d",index,temp_savedata.save_name,temp_savedata.save_snake_len);
+		}
+		keypad(stdscr,true);
+		cbreak();
+		noecho();
+		index=0;
+		while(key!=KEY_ENTER&&key!='\n')
+		{
+			if(key==KEY_UP||key=='w')
+			{
+				if(index==0)
+					index=count-1;
+				else
+					index--;
+			}
+			if(key==KEY_DOWN||key=='s')
+			{
+				if(index==count-1)
+					index=0;
+				else
+					index++;
+			}
+			select=save_entry_strings[index][0];
+			print_select_entry(win_ptr,save_entry_strings,count,index,start_screenrow,start_screencol);
+			key=getch();
+		}
+		select-=48;
+		temp_savedata=get_save_entry(select);
+		*d_ptr=temp_savedata.save_d;
+		*f_ptr=temp_savedata.save_f;
+		strcpy(name,temp_savedata.save_name);
+		*Current_len=temp_savedata.save_snake_len;
+		for(index=0;index<temp_savedata.save_snake_len;index++)
+			greedy[index]=(temp_savedata.save_greedy)[index];
+		Checkmap(greedy,*Current_len,Map);
+		return 0;
+	}
+}
+void save_savedata(WINDOW *win_ptr,direct *d_ptr,food *f_ptr,snake greedy,char *name,int *Current_len)
+{
+	save_entry temp_savedata;
+	int count;
+	int index;
+	gdbm_count(rank_db_ptr,(gdbm_count_t *)&count);
+	temp_savedata.save_d=*d_ptr;
+	temp_savedata.save_f=*f_ptr;
+	strcpy(temp_savedata.save_name,name);
+	temp_savedata.save_snake_len=*Current_len;
+	for(index=0;index<temp_savedata.save_snake_len;index++)
+		(temp_savedata.save_greedy)[index]=greedy[index];
+	add_save_entry(temp_savedata,count);
+	save_db_close();
 }

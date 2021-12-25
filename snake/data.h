@@ -33,7 +33,7 @@ typedef node *snake;
 
 typedef struct
 {
-	snake save_greedy[TOTLE_POINT];
+	node save_greedy[TOTLE_POINT];
 	char save_name[STR_LEN];
 	food save_f;
 	direct save_d;
@@ -63,12 +63,12 @@ bool save_isempty(void);
 void print_rank(WINDOW *win_ptr);
 void save_rank(char *name,int point);
 //存档数据处理函数
-void load_savedata(WINDOW *win_ptr,direct *d_ptr,food *f_ptr,snake greedy,bool Map[][WINDOW_WIDTH-2],char *name,int *Current_len);
+int load_savedata(WINDOW *win_ptr,direct *d_ptr,food *f_ptr,snake greedy,bool Map[][WINDOW_WIDTH-2],char *name,int *Current_len);
 void save_savedata(WINDOW *win_ptr,direct *d_ptr,food *f_ptr,snake greedy,char *name,int *Current_len);
 
 
 //游戏逻辑函数
-void init_status(WINDOW *win_ptr,direct *d_ptr,food *f_ptr,snake greedy,bool Map[][WINDOW_WIDTH-2],char *name,int *Current_len);
+int init_status(WINDOW *win_ptr,direct *d_ptr,food *f_ptr,snake greedy,bool Map[][WINDOW_WIDTH-2],char *name,int *Current_len);
 void destory_status(snake greedy);
 void end_game(WINDOW *win_ptr,char *string,char *name,int point);
 //用于参数模式的函数

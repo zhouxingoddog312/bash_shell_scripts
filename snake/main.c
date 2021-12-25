@@ -56,22 +56,18 @@ int main(int argc,char *argv[])
 		{
 			case 'n':
 				/*设置新的初始状态*/
-				init_status(select_win,&d,&f,greedy,Map,name,&Current_len);
-				command_result='g';
+				command_result=init_status(select_win,&d,&f,greedy,Map,name,&Current_len);
 				break;
 			case 'l':
 				/*载入存档中的状态*/
-				command_result='g';
-				break;
-			case 'd':
-				/*删除存档*/
+				command_result=load_savedata(select_win,&d,&f,greedy,Map,name,&Current_len);
 				break;
 			case 'q':
 				endwin();
 				destory_status(greedy);
 				exit(EXIT_SUCCESS);
 		}
-	}while(command_result!='g');
+	}while(command_result!=0);
 	delwin(start_rank_win);
 	draw_base_window();
 //游戏界面
@@ -146,6 +142,7 @@ int main(int argc,char *argv[])
 					case 10/*Enter键*/:
 					case 27/*Esc键*/:
 						/*存入存档*/
+						save_savedata(select_win,&d,&f,greedy,name,&Current_len);
 						goto endgame;
 				}
 			}

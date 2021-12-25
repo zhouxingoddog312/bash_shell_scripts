@@ -13,4 +13,4 @@ debug:
 install:
 
 clean:
-	$(RM) a.out main debug rank.db
+	$(RM) a.out main debug rank.db save_data.db

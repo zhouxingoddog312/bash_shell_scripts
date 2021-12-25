@@ -72,7 +72,7 @@ int command_mode(int argc,char *argv[],bool *Cheat)
 	return result;
 }
 //用于游戏逻辑的函数定义
-void init_status(WINDOW *win_ptr,direct *d_ptr,food *f_ptr,snake greedy,bool Map[][WINDOW_WIDTH-2],char *name,int *Current_len)
+int init_status(WINDOW *win_ptr,direct *d_ptr,food *f_ptr,snake greedy,bool Map[][WINDOW_WIDTH-2],char *name,int *Current_len)
 {
 	char *prompt[]=
 	{
@@ -119,6 +119,7 @@ void init_status(WINDOW *win_ptr,direct *d_ptr,food *f_ptr,snake greedy,bool Map
 	refresh();
 	draw_select_window(win_ptr,prompt,-1,WINDOW_HEIGHT/2-1,WINDOW_WIDTH/2-10);
 	wgetnstr(win_ptr,name,STR_LEN-1);
+	return 0;
 }
 void destory_status(snake greedy)
 {
