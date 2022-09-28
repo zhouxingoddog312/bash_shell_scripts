@@ -1,4 +1,4 @@
-#/bin/bash
+#!/bin/bash
 
 TARGET_DIR=~/cricetinae
 SUB_CATEGORY=(music game)
