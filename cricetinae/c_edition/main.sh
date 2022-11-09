@@ -2,12 +2,18 @@
 
 TARGET_DIR=~/cricetinae
 SUB_CATEGORY=(music game)
+DATE=$(date +%Y.%m.%d-%H:%M)
+exec 8>&1
+exec 9>&2
+
 
 if ! [ -d $TARGET_DIR ]
 then
-	mkdir -p $TARGET_DIR
+	mkdir -p $TARGET_DIR/log
 fi
 
+exec 1>"$TARGET_DIR""/log/""routinelog"."$DATE"
+exec 2>"$TARGET_DIR""/log/""errorlog"."$DATE"
 
 declare -A RELATION_LIST
 declare -A UNCOMPRESS_LIST
@@ -77,3 +83,7 @@ done
 
 #按类型归档
 traverse $1
+
+
+exec 1>&8
+exec 2>&9

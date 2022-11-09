@@ -1,10 +1,10 @@
 function zip_handle()
 {
-	unzip -O GBK "$1"&&rm -rf "$1"
+	unzip -n -O GBK "$1"&&rm -rf "$1"
 }
 function rar_handle()
 {
-	unrar e -p- "$1"&&rm -rf "$1"
+	unrar e -p- -o- "$1"&&rm -rf "$1"
 }
 function p7z_handle()
 {
