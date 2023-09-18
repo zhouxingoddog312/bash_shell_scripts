@@ -1,0 +1,140 @@
+#help information
+function help()
+{
+	cat <<EOF
+---------------------------------------------------------------------------------------------
+Usage:
+---------------------------------------------------------------------------------------------
+
+EOF
+}
+#version information
+function version()
+{
+	cat <<EOF
+---------------------------------------------------------------------------------------------
+Name: 
+Version: 1.00
+Author: goddog312
+---------------------------------------------------------------------------------------------
+
+EOF
+}
+#如果不存在源目录就创建源目录，源目录为空时提醒用户将指定文件放入源目录并退出。
+#如果不存在工作目录就创建工作目录。
+#保证源目录内存在待处理文件。
+function haswkdir()
+{
+	if [ ! -d $SOURCE_DIR ] || [ "`ls -A $SOURCE_DIR`" = "" ]
+	then
+		mkdir $SOURCE_DIR
+		echo "Put metadata.pegasus.txt and corresponding compressed package to $SOURCE_DIR. Then launch this script again."
+		#SOURCE_DIR目录不存在或为空时退出脚本
+		exit 0
+	fi
+	if [ ! -d $TRANSF_DIR ]
+	then
+		mkdir $TRANSF_DIR
+	fi
+	if [ ! -d $TARGET_DIR ]
+	then
+		mkdir $TARGET_DIR
+	fi
+}
+
+#验证SOURCE_DIR目录内的文件
+function check_source()
+{
+#是否有且仅有一个metadata.pegasus.txt文件
+	local metadata_file_count=`find $SOURCE_DIR -name metadata.pegasus.txt|wc -l`
+	if [ $metadata_file_count -lt 1 ]
+	then
+		echo "Need the file named metadata.pegasus.txt. Put it in the $SOURCE_DIR. Then launch this script again."
+		exit 1
+	elif [ $metadata_file_count -gt 1 ]
+	then
+		echo "More than one metadata.pegasus.txt. Delete the extra files. Then launch this script again."
+		exit 1
+	fi
+	local metadata_file=`find $SOURCE_DIR -name metadata.pegasus.txt`
+	split_metadata "$metadata_file"
+#是否有tkzlm后缀的文件
+#找到tkzlm后缀的文件并解压
+	local compress_files_count=`find $SOURCE_DIR -name *.tkzlm|wc -l`
+	if [ $compress_files_count -gt 0 ]
+	then
+		uncompress
+	else
+		echo "There's no compressed file."
+	fi
+#现在应该完成游戏名和roms的对应工作，roms应该用其地址替换名称
+	roms_list "$METADATA_GAMES" "$ROMS_LIST"
+}
+
+#参数：压缩文件
+#解压缩tkzlm后缀的压缩包,并删除
+function uncompress()
+{
+	local compressed_file
+	shopt -s globstar
+	for compressed_file in $SOURCE_DIR/**/*.tkzlm
+	do
+		7z x "$compressed_file" -o$SOURCE_DIR -p跳坑者联盟 -aos
+		rm -rf "$compressed_file"
+	done
+	shopt -u globstar
+}
+#分割metadata.pegasus.txt文件,并删除，可方便替换PC或安卓的启动参数
+#参数为metadata.pegasus.txt文件
+function split_metadata()
+{
+	sed -n -e '/launch:/,$d;w '"$METADATA_TITLE"'' "$1"
+	sed  -n -e '/game:/,$d;/^[[:space:]]*$/d;/launch:/,$w '"$METADATA_LAUNCH"'' "$1"
+#	sed -n -e '/^[[:space:]]*$/d;/game:/,$w '"$METADATA_GAMES"'' "$1"
+	sed -n -e '/game:/,$w '"$METADATA_GAMES"'' "$1"
+	rm -rf "$1"
+}
+#生成一个记录文件，文件格式以游戏名为第一行，后面每行都是该游戏名所属得rom，每个游戏以空行分隔
+#它得第一个参数是分割出来的metadata_games文件，第二个参数是需要生成的roms_list文件
+function roms_list()
+{
+	exec 3>&1
+	exec 1>"$2"
+	local key=""
+	local value=""
+	local OLDIFS=$IFS
+	IFS=
+	while read -r line
+	do
+#跳过空白行
+		if [[ "$line" =~ ^[[:space:]]*$ ]]
+		then
+			continue
+		elif [[ "$line" =~ ^game: ]]
+		then
+#下一个游戏用空白行隔开
+			if [ ! "$key" == "" ]
+			then
+				echo ""
+			fi
+			key=${line#game: }
+			echo $key
+		elif [[ "$line" =~ ^file: ]]
+		then
+			echo ${line#file: }
+		elif [[ "$line" =~ ^files: ]]
+		then
+			line=${line#files:}
+			if [[ ! "$line" =~ ^[[:space:]]*$ ]]
+			then
+				echo $line
+			fi
+#非空白行，有前导空白的，属于上一个key的值
+		elif [ "${line:0:1}" == " " ]
+		then
+			echo $line
+		fi
+	done<"$1"
+	IFS=$OLDIFS
+	exec 1>&3
+}
