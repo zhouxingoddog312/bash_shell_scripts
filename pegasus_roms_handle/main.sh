@@ -10,9 +10,10 @@ METADATA_LAUNCH=$SOURCE_DIR/"metadata_launch"
 METADATA_GAMES=$SOURCE_DIR/"metadata_games"
 declare -A games_roms
 declare -A games_medias
+declare -A games_descriptions
 source ./functions
 version
 help
 haswkdir
-check_source
+#check_source
 generate_database $METADATA_GAMES

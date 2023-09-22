@@ -98,7 +98,10 @@ function merge_metadata()
 {
 :
 }
-#获取两个关联数组，一个以游戏名为key，value为包含rom地址的数组，一个以游戏名为key，value为meida目录下游戏名对应的同名子目录地址
+#获取三个关联数组
+#games_roms	游戏名->rom地址的数组名->rom地址数组
+#games_medias	游戏名->rom文件名对应的media目录下子目录地址
+#games_descriptions	游戏名->description字段的字符串
 #它的参数是分割出来的metadata_games文件
 function generate_database()
 {
@@ -129,12 +132,23 @@ function generate_database()
 		elif [[ "$line" =~ ^file: ]]
 		then
 			line=${line#file: }
+#games_roms	添加roms文件地址，若存在则添加到数组里，若不存在则报错
 			if [ -e $SOURCE_DIR/**/"$line" ]
 			then
 				tmp_string=`ls $SOURCE_DIR/**/"$line"`
 				eval $value[\${#$value[@]}]="\$tmp_string"
 			else
 				echo "file: $line can't be find.">&2
+			fi
+#games_medias	去除rom文件后缀
+#games_medias	添加rom文件名对应media下子目录，若目录不存在则报错
+			line=${line%.*}
+			if [ -d $SOURCE_DIR/**/media/"$line" ]
+			then
+				tmp_string=`ls -d $SOURCE_DIR/**/media/"$line"`
+				games_medias["$key"]="$tmp_string"
+			else
+				echo "derectory: $tmp_string can't be find.">&2
 			fi
 		elif [[ "$line" =~ ^files: ]]
 		then
@@ -144,6 +158,7 @@ function generate_database()
 #这里为IFS赋值旨在去除字符串的前导空格
 				IFS=$OLDIFS
 				line=`echo $line`
+#games_roms	添加roms文件地址，若存在则添加到数组里，若不存在则报错
 				if [ -e $SOURCE_DIR/**/"$line" ]
 				then
 					tmp_string=`ls $SOURCE_DIR/**/"$line"`
@@ -152,12 +167,23 @@ function generate_database()
 					echo "file: $line can't be find.">&2
 				fi
 				IFS=
+#games_medias	去除rom文件后缀
+#games_medias	添加rom文件名对应media下子目录，若目录不存在则报错
+				line=${line%.*}
+				if [ -d $SOURCE_DIR/**/media/"$line" ]
+				then
+					tmp_string=`ls -d $SOURCE_DIR/**/media/"$line"`
+					games_medias["$key"]="$tmp_string"
+				else
+					echo "derectory: $tmp_string can't be find.">&2
+				fi
 			fi
 #非空白行，有前导空白的，属于上一个key的值
 		elif [ "${line:0:1}" == " " ]
 		then
 			IFS=$OLDIFS
 			line=`echo $line`
+#games_roms	添加roms文件地址，若存在则添加到数组里，若不存在则报错
 			if [ -e $SOURCE_DIR/**/"$line" ]
 			then
 				tmp_string=`ls $SOURCE_DIR/**/"$line"`
@@ -166,13 +192,32 @@ function generate_database()
 				echo "file: $line can't be find.">&2
 			fi
 			IFS=
+#games_medias	去除rom文件后缀
+#games_medias	添加rom文件名对应media下子目录，若目录不存在则报错
+			line=${line%.*}
+			if [ -d $SOURCE_DIR/**/media/"$line" ]
+			then
+				tmp_string=`ls -d $SOURCE_DIR/**/media/"$line"`
+				games_medias["$key"]="$tmp_string"
+			else
+				echo "derectory: $tmp_string can't be find.">&2
+			fi
+		elif [[ "$line" =~ ^description: ]]
+		then
+#games_descriptions
+			line=${line#description: }
+			games_descriptions["$key"]="$line"
 		fi
 	done
+#######################
 #测试
 	declare -p games_roms
-	declare -p array9
+	declare -p games_descriptions
+	declare -p games_medias
 	echo ${#games_roms[@]}
-
+	echo ${#games_descriptions[@]}
+	echo ${#games_medias[@]}
+###########################
 	shopt -u globstar
 	IFS=$OLDIFS
 	exec 0<&3
