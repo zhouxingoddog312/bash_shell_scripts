@@ -86,6 +86,8 @@ function uncompress()
 #参数为metadata.pegasus.txt文件
 function split_metadata()
 {
+#把windows格式的换行符转换成unix格式的换行符
+	dos2unix "$1"
 	sed -n -e '/launch:/,$d;w '"$METADATA_TITLE"'' "$1"
 	sed  -n -e '/game:/,$d;/^[[:space:]]*$/d;/launch:/,$w '"$METADATA_LAUNCH"'' "$1"
 #	sed -n -e '/^[[:space:]]*$/d;/game:/,$w '"$METADATA_GAMES"'' "$1"
@@ -100,13 +102,17 @@ function merge_metadata()
 #它的参数是分割出来的metadata_games文件
 function generate_database()
 {
+	exec 4>&2
+	exec 2>"$LOG"
 	exec 3<&0
 	exec 0<"$1"
 	local key=""
 	local value=""
+	local tmp_string
 	local -i serial_number=0
 	local OLDIFS=$IFS
 	IFS=
+	shopt -s globstar
 	while read -r line
 	do
 #跳过空白行
@@ -115,16 +121,21 @@ function generate_database()
 			continue
 		elif [[ "$line" =~ ^game: ]]
 		then
-#下一个游戏用空白行隔开
-			if [ ! "$key" == "" ]
-			then
-				echo ""
-			fi
 			key=${line#game: }
-			echo $key
+			value="array"$serial_number
+			eval declare -a "$value"
+			let serial_number++
+			games_roms["$key"]="$value"
 		elif [[ "$line" =~ ^file: ]]
 		then
-			echo ${line#file: }
+			line=${line#file: }
+			if [ -e $SOURCE_DIR/**/"$line" ]
+			then
+				tmp_string=`ls $SOURCE_DIR/**/"$line"`
+				eval $value[\${#$value[@]}]="\$tmp_string"
+			else
+				echo "file: $line can't be find.">&2
+			fi
 		elif [[ "$line" =~ ^files: ]]
 		then
 			line=${line#files:}
@@ -132,17 +143,38 @@ function generate_database()
 			then
 #这里为IFS赋值旨在去除字符串的前导空格
 				IFS=$OLDIFS
-				echo $line
+				line=`echo $line`
+				if [ -e $SOURCE_DIR/**/"$line" ]
+				then
+					tmp_string=`ls $SOURCE_DIR/**/"$line"`
+					eval $value[\${#$value[@]}]="\$tmp_string"
+				else
+					echo "file: $line can't be find.">&2
+				fi
 				IFS=
 			fi
 #非空白行，有前导空白的，属于上一个key的值
 		elif [ "${line:0:1}" == " " ]
 		then
 			IFS=$OLDIFS
-			echo $line
+			line=`echo $line`
+			if [ -e $SOURCE_DIR/**/"$line" ]
+			then
+				tmp_string=`ls $SOURCE_DIR/**/"$line"`
+				eval $value[\${#$value[@]}]="\$tmp_string"
+			else
+				echo "file: $line can't be find.">&2
+			fi
 			IFS=
 		fi
 	done
+#测试
+	declare -p games_roms
+	declare -p array9
+	echo ${#games_roms[@]}
+
+	shopt -u globstar
 	IFS=$OLDIFS
 	exec 0<&3
+	exec 2>&4
 }
