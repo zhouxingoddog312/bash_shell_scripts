@@ -148,7 +148,7 @@ function generate_database()
 				tmp_string=`ls -d $SOURCE_DIR/**/media/"$line"`
 				games_medias["$key"]="$tmp_string"
 			else
-				echo "derectory: $tmp_string can't be find.">&2
+				echo "derectory: /media/$line can't be find.">&2
 			fi
 		elif [[ "$line" =~ ^files: ]]
 		then
@@ -175,7 +175,7 @@ function generate_database()
 					tmp_string=`ls -d $SOURCE_DIR/**/media/"$line"`
 					games_medias["$key"]="$tmp_string"
 				else
-					echo "derectory: $tmp_string can't be find.">&2
+					echo "derectory: /media/$line can't be find.">&2
 				fi
 			fi
 #非空白行，有前导空白的，属于上一个key的值
@@ -200,26 +200,44 @@ function generate_database()
 				tmp_string=`ls -d $SOURCE_DIR/**/media/"$line"`
 				games_medias["$key"]="$tmp_string"
 			else
-				echo "derectory: $tmp_string can't be find.">&2
+				echo "derectory: /media/$line can't be find.">&2
 			fi
 		elif [[ "$line" =~ ^description: ]]
 		then
 #games_descriptions
 			line=${line#description: }
-			games_descriptions["$key"]="$line"
+#核对对应的rom地址是否存在，只有rom地址存在才添加描述
+			eval tmp_string="\${#${games_roms["$key"]}[@]}"
+			if [ $tmp_string -ge 1 ]
+			then
+				games_descriptions["$key"]="$line"
+			fi
 		fi
 	done
 #######################
 #测试
-	declare -p games_roms
-	declare -p games_descriptions
-	declare -p games_medias
-	echo ${#games_roms[@]}
-	echo ${#games_descriptions[@]}
-	echo ${#games_medias[@]}
+#	declare -p games_roms
+#	declare -p games_descriptions
+#	declare -p games_medias
+#	echo ${#games_roms[@]}
+#	echo ${#games_descriptions[@]}
+#	echo ${#games_medias[@]}
 ###########################
 	shopt -u globstar
 	IFS=$OLDIFS
 	exec 0<&3
 	exec 2>&4
+}
+#显示游戏的选择框，返回所选择的游戏
+function select_interface()
+{
+	local tmp_str=""
+	local key
+	local value
+	for key in "${!games_descriptions[@]}"
+	do
+		value="${games_descriptions[$key]}"
+		tmp_str=$tmp_str"TRUE ""\"$key\""" ""\"$value\""" "
+	done
+	eval zenity --width=80 --height=80 --title="游戏选择" --text="选择你需要的游戏" --list --checklist --column="选择" --column="游戏名" --column="描述" $tmp_str
 }
