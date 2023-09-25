@@ -77,7 +77,7 @@ function uncompress()
 	shopt -s globstar
 	for compressed_file in $SOURCE_DIR/**/*.tkzlm
 	do
-		7z x "$compressed_file" -o$SOURCE_DIR -p跳坑者联盟 -aos
+		7z x "$compressed_file" -o$TRANSF_DIR -p跳坑者联盟 -aos
 		rm -rf "$compressed_file"
 	done
 	shopt -u globstar
@@ -94,6 +94,7 @@ function split_metadata()
 	sed -n -e '/game:/,$w '"$METADATA_GAMES"'' "$1"
 	rm -rf "$1"
 }
+#合并metadata.pegasus.txt文件
 function merge_metadata()
 {
 :
@@ -133,9 +134,9 @@ function generate_database()
 		then
 			line=${line#file: }
 #games_roms	添加roms文件地址，若存在则添加到数组里，若不存在则报错
-			if [ -e $SOURCE_DIR/**/"$line" ]
+			if [ -e $TRANSF_DIR/**/"$line" ]
 			then
-				tmp_string=`ls $SOURCE_DIR/**/"$line"`
+				tmp_string=`ls $TRANSF_DIR/**/"$line"`
 				eval $value[\${#$value[@]}]="\$tmp_string"
 			else
 				echo "file: $line can't be find.">&2
@@ -143,9 +144,9 @@ function generate_database()
 #games_medias	去除rom文件后缀
 #games_medias	添加rom文件名对应media下子目录，若目录不存在则报错
 			line=${line%.*}
-			if [ -d $SOURCE_DIR/**/media/"$line" ]
+			if [ -d $TRANSF_DIR/**/media/"$line" ]
 			then
-				tmp_string=`ls -d $SOURCE_DIR/**/media/"$line"`
+				tmp_string=`ls -d $TRANSF_DIR/**/media/"$line"`
 				games_medias["$key"]="$tmp_string"
 			else
 				echo "derectory: /media/$line can't be find.">&2
@@ -159,9 +160,9 @@ function generate_database()
 				IFS=$OLDIFS
 				line=`echo $line`
 #games_roms	添加roms文件地址，若存在则添加到数组里，若不存在则报错
-				if [ -e $SOURCE_DIR/**/"$line" ]
+				if [ -e $TRANSF_DIR/**/"$line" ]
 				then
-					tmp_string=`ls $SOURCE_DIR/**/"$line"`
+					tmp_string=`ls $TRANSF_DIR/**/"$line"`
 					eval $value[\${#$value[@]}]="\$tmp_string"
 				else
 					echo "file: $line can't be find.">&2
@@ -170,9 +171,9 @@ function generate_database()
 #games_medias	去除rom文件后缀
 #games_medias	添加rom文件名对应media下子目录，若目录不存在则报错
 				line=${line%.*}
-				if [ -d $SOURCE_DIR/**/media/"$line" ]
+				if [ -d $TRANSF_DIR/**/media/"$line" ]
 				then
-					tmp_string=`ls -d $SOURCE_DIR/**/media/"$line"`
+					tmp_string=`ls -d $TRANSF_DIR/**/media/"$line"`
 					games_medias["$key"]="$tmp_string"
 				else
 					echo "derectory: /media/$line can't be find.">&2
@@ -184,9 +185,9 @@ function generate_database()
 			IFS=$OLDIFS
 			line=`echo $line`
 #games_roms	添加roms文件地址，若存在则添加到数组里，若不存在则报错
-			if [ -e $SOURCE_DIR/**/"$line" ]
+			if [ -e $TRANSF_DIR/**/"$line" ]
 			then
-				tmp_string=`ls $SOURCE_DIR/**/"$line"`
+				tmp_string=`ls $TRANSF_DIR/**/"$line"`
 				eval $value[\${#$value[@]}]="\$tmp_string"
 			else
 				echo "file: $line can't be find.">&2
@@ -195,9 +196,9 @@ function generate_database()
 #games_medias	去除rom文件后缀
 #games_medias	添加rom文件名对应media下子目录，若目录不存在则报错
 			line=${line%.*}
-			if [ -d $SOURCE_DIR/**/media/"$line" ]
+			if [ -d $TRANSF_DIR/**/media/"$line" ]
 			then
-				tmp_string=`ls -d $SOURCE_DIR/**/media/"$line"`
+				tmp_string=`ls -d $TRANSF_DIR/**/media/"$line"`
 				games_medias["$key"]="$tmp_string"
 			else
 				echo "derectory: /media/$line can't be find.">&2
@@ -216,12 +217,12 @@ function generate_database()
 	done
 #######################
 #测试
-#	declare -p games_roms
+	declare -p games_roms
 #	declare -p games_descriptions
-#	declare -p games_medias
-#	echo ${#games_roms[@]}
+	declare -p games_medias
+	echo ${#games_roms[@]}
 #	echo ${#games_descriptions[@]}
-#	echo ${#games_medias[@]}
+	echo ${#games_medias[@]}
 ###########################
 	shopt -u globstar
 	IFS=$OLDIFS
@@ -241,3 +242,4 @@ function select_interface()
 	done
 	eval zenity --width=80 --height=80 --title="游戏选择" --text="选择你需要的游戏" --list --checklist --column="选择" --column="游戏名" --column="描述" $tmp_str
 }
+#
