@@ -1,5 +1,5 @@
 #! /bin/bash
-#depend on sed,7z,tofrodos,imagemagick,zenity
+#depend on sed,7z,unix2dos,zenity
 CUR_DIR=`pwd`
 SOURCE_DIR=$CUR_DIR/"source"
 TRANSF_DIR=$CUR_DIR/"transf"
@@ -17,10 +17,10 @@ source ./functions
 version
 help
 haswkdir
-#check_source
+check_source
 generate_database $METADATA_GAMES
 #################测试
-#str=$(select_interface)
+str=$(select_interface)
 #OLDIFS=$IFS
 #IFS='|'
 #declare -a array

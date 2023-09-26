@@ -168,9 +168,9 @@ function generate_database()
 					echo "file: $line can't be find.">&2
 				fi
 				IFS=
-#games_medias	去除rom文件后缀
+#games_medias	针对files字段，应该去除rom名，留下rom名前面的目录名
 #games_medias	添加rom文件名对应media下子目录，若目录不存在则报错
-				line=${line%.*}
+				line=${line%/*}
 				if [ -d $TRANSF_DIR/**/media/"$line" ]
 				then
 					tmp_string=`ls -d $TRANSF_DIR/**/media/"$line"`
@@ -193,9 +193,9 @@ function generate_database()
 				echo "file: $line can't be find.">&2
 			fi
 			IFS=
-#games_medias	去除rom文件后缀
+#games_medias	针对files字段，应该去除rom名，留下rom名前面的目录名
 #games_medias	添加rom文件名对应media下子目录，若目录不存在则报错
-			line=${line%.*}
+			line=${line%/*}
 			if [ -d $TRANSF_DIR/**/media/"$line" ]
 			then
 				tmp_string=`ls -d $TRANSF_DIR/**/media/"$line"`
