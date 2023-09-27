@@ -273,11 +273,12 @@ function move_files()
 	local file
 	for key in "${games_selected[@]}"
 	do
-		tmp_array=games_roms["$key"]
+		tmp_array=${games_roms["$key"]}
 		eval tmp_array_length=\${#$tmp_array[@]}
 		if [ $tmp_array_length -gt 1 ]
 		then
 #rom文件多于1个的，需要先创建子目录，再移动rom
+			:
 		elif [ $tmp_array_length -lt 1 ]
 		then
 #rom文件少于1个的说明前面generate_database出现问题，警告并退出
