@@ -5,6 +5,7 @@ SOURCE_DIR=$CUR_DIR/"source"
 TRANSF_DIR=$CUR_DIR/"transf"
 TARGET_DIR=$CUR_DIR/"target"
 LOG=$CUR_DIR/"logfile"
+ROMS_SUB_DIRNAME=""
 METADATA_TITLE=$TRANSF_DIR/"metadata_title"
 METADATA_LAUNCH=$TRANSF_DIR/"metadata_launch"
 METADATA_GAMES=$TRANSF_DIR/"metadata_games"
@@ -20,3 +21,4 @@ haswkdir
 generate_database $METADATA_GAMES
 select_result
 check_target
+move_files

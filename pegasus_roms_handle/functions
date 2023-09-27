@@ -260,7 +260,37 @@ function check_target()
 		zenity --error --width=80 --height=80 --title="错误" --text="无法同时处理多个不同种类游戏的rom，请检查压缩文件，并重新执行脚本.或者删除transf目录内不是你目标的子目录。"
 	else
 		local dir=`ls -d $TRANSF_DIR/*/`
-		dir=${dir##*/transf/}
-		mkdir -p $TARGET_DIR/"$dir"/media/
+		ROMS_SUB_DIRNAME=${dir##*/transf/}
+		mkdir -p $TARGET_DIR/"$ROMS_SUB_DIRNAME"/media/
 	fi
+}
+#按照games_selected移动相应rom及media文件到target目录中去
+function move_files()
+{
+	local key
+	local tmp_array
+	local -i tmp_array_length=0
+	local file
+	for key in "${games_selected[@]}"
+	do
+		tmp_array=games_roms["$key"]
+		eval tmp_array_length=\${#$tmp_array[@]}
+		if [ $tmp_array_length -gt 1 ]
+		then
+#rom文件多于1个的，需要先创建子目录，再移动rom
+		elif [ $tmp_array_length -lt 1 ]
+		then
+#rom文件少于1个的说明前面generate_database出现问题，警告并退出
+			zenity --error --width=80 --height=80 --title="错误" --text="rom数据文件错误."
+			exit 1
+		else
+#只有一个rom文件的情况
+#移动rom文件
+			eval file=\"\${$tmp_array[0]}\"
+			mv "$file" $TARGET_DIR/"$ROMS_SUB_DIRNAME"
+#移动media下的子目录
+			file="${games_medias[$key]}"
+			mv "$file" $TARGET_DIR/"$ROMS_SUB_DIRNAME"/media/
+		fi
+	done
 }
