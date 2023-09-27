@@ -49,11 +49,11 @@ function check_source()
 	local metadata_file_count=`find $SOURCE_DIR -name metadata.pegasus.txt|wc -l`
 	if [ $metadata_file_count -lt 1 ]
 	then
-		echo "Need the file named metadata.pegasus.txt. Put it in the $SOURCE_DIR. Then launch this script again."
+		zenity --error --width=80 --height=80 --title="错误" --text="Need the file named metadata.pegasus.txt. Put it in the $SOURCE_DIR. Then launch this script again."
 		exit 1
 	elif [ $metadata_file_count -gt 1 ]
 	then
-		echo "More than one metadata.pegasus.txt. Delete the extra files. Then launch this script again."
+		zenity --error --width=80 --height=80 --title="错误" --text="More than one metadata.pegasus.txt. Delete the extra files. Then launch this script again."
 		exit 1
 	fi
 	local metadata_file=`find $SOURCE_DIR -name metadata.pegasus.txt`
@@ -217,12 +217,12 @@ function generate_database()
 	done
 #######################
 #测试
-	declare -p games_roms
+#	declare -p games_roms
 #	declare -p games_descriptions
-	declare -p games_medias
-	echo ${#games_roms[@]}
+#	declare -p games_medias
+#	echo ${#games_roms[@]}
 #	echo ${#games_descriptions[@]}
-	echo ${#games_medias[@]}
+#	echo ${#games_medias[@]}
 ###########################
 	shopt -u globstar
 	IFS=$OLDIFS
@@ -230,6 +230,7 @@ function generate_database()
 	exec 2>&4
 }
 #显示游戏的选择框，返回所选择的游戏
+#返回所选游戏名的字符串，每个游戏名由'|'分割
 function select_interface()
 {
 	local tmp_str=""
@@ -242,4 +243,24 @@ function select_interface()
 	done
 	eval zenity --width=80 --height=80 --title="游戏选择" --text="选择你需要的游戏" --list --checklist --column="选择" --column="游戏名" --column="描述" $tmp_str
 }
-#
+#获取数组games_selected
+function select_result()
+{
+	local tmp_str=$(select_interface)
+	local OLDIFS=$IFS
+	IFS='|'
+	read -ra games_selected <<<"$tmp_str"
+}
+#解压缩完成后，transf目录内应该只有一个roms目录，如果有多余的roms目录，那么可能是tkzlm后缀的压缩文件不只一个游戏种类，这种情况无法处理
+function check_target()
+{
+	local count_dir=`ls -d $TRANSF_DIR/*/|wc -l`
+	if [ $count_dir -ne 1 ]
+	then
+		zenity --error --width=80 --height=80 --title="错误" --text="无法同时处理多个不同种类游戏的rom，请检查压缩文件，并重新执行脚本.或者删除transf目录内不是你目标的子目录。"
+	else
+		local dir=`ls -d $TRANSF_DIR/*/`
+		dir=${dir##*/transf/}
+		mkdir -p $TARGET_DIR/"$dir"/media/
+	fi
+}

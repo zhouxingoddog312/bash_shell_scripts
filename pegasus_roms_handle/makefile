@@ -7,4 +7,4 @@ initial_2:clean
 	-mkdir source
 	cp -r ~/workspace/download/POKE\ MINI/ ./source
 clean:
-	rm -rf ./source ./transf ./target
+	rm -rf ./source ./transf ./target ./logfile
