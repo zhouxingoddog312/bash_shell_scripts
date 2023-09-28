@@ -49,11 +49,11 @@ function check_source()
 	local metadata_file_count=`find $SOURCE_DIR -name metadata.pegasus.txt|wc -l`
 	if [ $metadata_file_count -lt 1 ]
 	then
-		zenity --error --width=80 --height=80 --title="错误" --text="Need the file named metadata.pegasus.txt. Put it in the $SOURCE_DIR. Then launch this script again."
+		zenity --error --width=180 --height=180 --title="错误" --text="Need the file named metadata.pegasus.txt. Put it in the $SOURCE_DIR. Then launch this script again."
 		exit 1
 	elif [ $metadata_file_count -gt 1 ]
 	then
-		zenity --error --width=80 --height=80 --title="错误" --text="More than one metadata.pegasus.txt. Delete the extra files. Then launch this script again."
+		zenity --error --width=180 --height=180 --title="错误" --text="More than one metadata.pegasus.txt. Delete the extra files. Then launch this script again."
 		exit 1
 	fi
 	local metadata_file=`find $SOURCE_DIR -name metadata.pegasus.txt`
@@ -127,7 +127,8 @@ function generate_database()
 		then
 			key=${line#game: }
 			value="array"$serial_number
-			eval declare -a "$value"
+#在函数内定义的数组，必须定义成全局变量
+			eval declare -ag "$value"
 			let serial_number++
 			games_roms["$key"]="$value"
 		elif [[ "$line" =~ ^file: ]]
@@ -241,7 +242,7 @@ function select_interface()
 		value="${games_descriptions[$key]}"
 		tmp_str=$tmp_str"TRUE ""\"$key\""" ""\"$value\""" "
 	done
-	eval zenity --width=80 --height=80 --title="游戏选择" --text="选择你需要的游戏" --list --checklist --column="选择" --column="游戏名" --column="描述" $tmp_str
+	eval zenity --width=180 --height=180 --title="游戏选择" --text="选择你需要的游戏" --list --checklist --column="选择" --column="游戏名" --column="描述" $tmp_str
 }
 #获取数组games_selected
 function select_result()
@@ -254,12 +255,13 @@ function select_result()
 #解压缩完成后，transf目录内应该只有一个roms目录，如果有多余的roms目录，那么可能是tkzlm后缀的压缩文件不只一个游戏种类，这种情况无法处理
 function check_target()
 {
+	local dir=""
 	local count_dir=`ls -d $TRANSF_DIR/*/|wc -l`
 	if [ $count_dir -ne 1 ]
 	then
-		zenity --error --width=80 --height=80 --title="错误" --text="无法同时处理多个不同种类游戏的rom，请检查压缩文件，并重新执行脚本.或者删除transf目录内不是你目标的子目录。"
+		zenity --error --width=180 --height=180 --title="错误" --text="无法同时处理多个不同种类游戏的rom，请检查压缩文件，并重新执行脚本.或者删除transf目录内不是你目标的子目录。"
 	else
-		local dir=`ls -d $TRANSF_DIR/*/`
+		dir=`ls -d $TRANSF_DIR/*/`
 		ROMS_SUB_DIRNAME=${dir##*/transf/}
 		mkdir -p $TARGET_DIR/"$ROMS_SUB_DIRNAME"/media/
 	fi
@@ -270,19 +272,34 @@ function move_files()
 	local key
 	local tmp_array
 	local -i tmp_array_length=0
+	local -i index=0
 	local file
+	local sub_dir
 	for key in "${games_selected[@]}"
 	do
 		tmp_array=${games_roms["$key"]}
-		eval tmp_array_length=\${#$tmp_array[@]}
+		eval tmp_array_length=\${\#$tmp_array\[@\]}
 		if [ $tmp_array_length -gt 1 ]
 		then
 #rom文件多于1个的，需要先创建子目录，再移动rom
-			:
+			eval sub_dir=\"\${$tmp_array[0]}\"
+			sub_dir=${sub_dir%/*}
+			sub_dir=${sub_dir##*/}
+#创建子目录
+			mkdir -p $TARGET_DIR/"$ROMS_SUB_DIRNAME"/"$sub_dir"
+#移动rom文件
+			for((index=0;index<tmp_array_length;index++))	
+			do
+				eval file=\"\${$tmp_array[$index]}\"
+				mv "$file" $TARGET_DIR/"$ROMS_SUB_DIRNAME"/"$sub_dir"
+			done
+#移动media下的子目录
+			file="${games_medias[$key]}"
+			mv "$file" $TARGET_DIR/"$ROMS_SUB_DIRNAME"/media/
 		elif [ $tmp_array_length -lt 1 ]
 		then
 #rom文件少于1个的说明前面generate_database出现问题，警告并退出
-			zenity --error --width=80 --height=80 --title="错误" --text="rom数据文件错误."
+			zenity --error --width=180 --height=180 --title="错误" --text="rom数据文件错误."
 			exit 1
 		else
 #只有一个rom文件的情况

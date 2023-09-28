@@ -17,7 +17,7 @@ source ./functions
 version
 help
 haswkdir
-#check_source
+check_source
 generate_database $METADATA_GAMES
 select_result
 check_target
