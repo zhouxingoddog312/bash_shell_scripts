@@ -28,7 +28,7 @@ function haswkdir()
 	if [ ! -d $SOURCE_DIR ] || [ "`ls -A $SOURCE_DIR`" = "" ]
 	then
 		mkdir $SOURCE_DIR
-		echo "Put metadata.pegasus.txt and corresponding compressed package to $SOURCE_DIR. Then launch this script again."
+		zenity --info --width=$WIDTH --height=$HEIGHT --title="注意" --text="Put metadata.pegasus.txt and corresponding compressed package to $SOURCE_DIR. Then launch this script again."
 		#SOURCE_DIR目录不存在或为空时退出脚本
 		exit 0
 	fi
@@ -65,7 +65,7 @@ function check_source()
 	then
 		uncompress
 	else
-		echo "There's no compressed file."
+		echo "There's no compressed file.">&2
 	fi
 }
 
@@ -86,7 +86,8 @@ function uncompress()
 #参数为metadata.pegasus.txt文件
 function split_metadata()
 {
-	local metadata_file=$TRANSF/"metadata_file"
+	local metadata_file=$TRANSF_DIR/"metadata_file"
+	touch "$metadata_file"
 #把windows格式的换行符转换成unix格式的换行符
 	dos2unix -n "$1" "$metadata_file"
 	sed -n -e '/launch:/,$d;w '"$METADATA_TITLE"'' "$metadata_file"
@@ -107,8 +108,6 @@ function merge_metadata()
 #它的参数是分割出来的metadata_games文件
 function generate_database()
 {
-	exec 4>&2
-	exec 2>"$LOG"
 	exec 3<&0
 	exec 0<"$1"
 	local key=""
@@ -229,7 +228,6 @@ function generate_database()
 	shopt -u globstar
 	IFS=$OLDIFS
 	exec 0<&3
-	exec 2>&4
 }
 #显示游戏的选择框，返回所选择的游戏
 #返回所选游戏名的字符串，每个游戏名由'|'分割
@@ -312,4 +310,9 @@ function move_files()
 			mv "$file" $TARGET_DIR/"$ROMS_SUB_DIRNAME"/media/
 		fi
 	done
+}
+#完成后做最后的清理工作
+function clean_all()
+{
+:
 }
