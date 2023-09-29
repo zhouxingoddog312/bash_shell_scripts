@@ -96,11 +96,6 @@ function split_metadata()
 	sed -n -e '/game:/,$w '"$METADATA_GAMES"'' "$metadata_file"
 	rm -rf "$metadata_file"
 }
-#合并metadata.pegasus.txt文件
-function merge_metadata()
-{
-:
-}
 #获取三个关联数组
 #games_roms	游戏名->rom地址的数组名->rom地址数组
 #games_medias	游戏名->rom文件名对应的media目录下子目录地址
@@ -311,8 +306,48 @@ function move_files()
 		fi
 	done
 }
-#完成后做最后的清理工作
-function clean_all()
+#选择安卓或者PC
+#这里将从metadata目录中提取对应的metadata.pegasus.txt文件的title和launch部分
+function select_platform()
 {
-:
+	local platform=$(zenity --width=$WIDTH --height=$HEIGHT --title="游戏平台选择" --text="选择你所使用的游戏平台，以生成对应的metadata.pegasus.txt文件" --list --radiolist --column="选择" --column="游戏平台" true android false PC)
+	local metadata_file=$METADATA_DIR"/$platform/$ROMS_SUB_DIRNAME/metadata.pegasus.txt"
+	local new_metadata_file="$TRANSF_DIR/metadata.pegasus.txt"
+	touch $new_metadata_file
+	dos2unix -n $metadata_file $new_metadata_file
+	sed -n -e '/launch:/,$d;w '"$METADATA_TITLE"'' "$new_metadata_file"
+	sed  -n -e '/game:/,$d;/^[[:space:]]*$/d;/launch:/,$w '"$METADATA_LAUNCH"'' "$new_metadata_file"
+	rm -rf $new_metadata_file
+}
+#合并metadata.pegasus.txt文件
+function merge_metadata()
+{
+#是否要删除metadata_games文件中未被选中的games条目
+#合并metadata_title metadata_launch metadata_games三个文件生成新的metadata.pegasus.txt
+	local metadata_file="$TARGET_DIR/$ROMS_SUB_DIRNAME/metadata.pegasus.txt"
+	touch "$metadata_file"
+	cat "$METADATA_TITLE">>"$metadata_file"
+	cat "$METADATA_LAUNCH">>"$metadata_file"
+	echo "">>"$metadata_file"
+	cat "$METADATA_GAMES">>"$metadata_file"
+#转换为windows换行符格式
+	unix2dos "$metadata_file"
+}
+#完成后做最后的清理工作
+#0	删除脚本自身以外的所有文件及目录
+#1	删除target目录、logfile、及脚本自身以外的所有文件
+#2	删除source目录、logfile、及脚本自身以外的所有文件，恢复到未处理前的状态，方便查看logfile并再次进行处理
+function clearup()
+{
+	case $1 in
+	0)
+		rm -rf $SOURCE_DIR $TRANSF_DIR $TARGET_DIR $LOG
+		;;
+	1)
+		rm -rf $SOURCE_DIR $TRANSF_DIR
+		;;
+	2)
+		rm -rf $TRANSF_DIR $TARGET_DIR
+		;;
+	esac
 }

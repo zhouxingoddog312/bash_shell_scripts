@@ -4,6 +4,7 @@ CUR_DIR=`pwd`
 SOURCE_DIR=$CUR_DIR/"source"
 TRANSF_DIR=$CUR_DIR/"transf"
 TARGET_DIR=$CUR_DIR/"target"
+METADATA_DIR=$CUR_DIR/"metadata"
 LOG=$CUR_DIR/"logfile"
 ROMS_SUB_DIRNAME=""
 METADATA_TITLE=$TRANSF_DIR/"metadata_title"
@@ -28,5 +29,8 @@ generate_database $METADATA_GAMES
 select_result
 check_target
 move_files
+select_platform
+merge_metadata
+clearup 1
 
 exec 2>&4
