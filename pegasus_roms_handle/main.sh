@@ -9,6 +9,8 @@ ROMS_SUB_DIRNAME=""
 METADATA_TITLE=$TRANSF_DIR/"metadata_title"
 METADATA_LAUNCH=$TRANSF_DIR/"metadata_launch"
 METADATA_GAMES=$TRANSF_DIR/"metadata_games"
+declare -i WIDTH=$[ $COLUMNS * 3 ]
+declare -i HEIGHT=$[ $LINES * 3 ]
 declare -A games_roms
 declare -A games_medias
 declare -A games_descriptions
