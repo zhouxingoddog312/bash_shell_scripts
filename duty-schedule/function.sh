@@ -113,33 +113,77 @@ function gen_wkdir()
 	fi
 }
 #接受一个年份的参数生成一个含有该年份所有日期的节假日标记的对照表
+#工作日对应结果为0,休息日对应结果为1,节假日对应的结果为2
 function gen_calendar()
 {
-	local ret_str
-	local year
+	local flag
+	local entry
+	local date_format="%Y%m%d	%A"
+	local day
 	local calendar=$DB_PRE_CAL$1
 #如果该年度的节假日表不存在就生成一个
 	if [ ! -e $calendar ]
 	then
-		ret_str=$(curl -sX GET "https://tool.bitefu.net/jiari/?d=$1")
-		year=$(echo $ret_str|eval jq .'\"$1\"')
-		if [ ! "$year" = "false" ] && [ ! "$year" = "null" ]
+		touch $calendar
+#使用zenity显示数据生成进度
+		coproc zenity --progress --width=$WIDTH --height=$HEIGHT --title="年度节假日数据生成中" --text="正在获取$1年度节假日数据" --percentage=0 --no-cancel --auto-close
+		for((i=0;i<=364;i++))
+		do
+			entry=$(date -d "$1-01-01 + $i day" +"$date_format")
+			day=${entry:0:8}
+			flag=$(curl -sX GET "https://tool.bitefu.net/jiari/?d=$day")
+#flag的结果只能是0,1,2
+			if [ $flag -ne 0 ] && [ $flag -ne 1 ] && [ $flag -ne 2 ]
+			then
+				zenity --error --width=$WIDTH --height=$HEIGHT --title="数据获取失败" --text="获取年度节假日数据失败，请检查网络及相关情况并重新启动脚本。"
+				exit 1
+			fi
+			entry=$entry"	$flag"
+			echo $entry>>$calendar
+#因为免费api限制一秒内最多访问两次
+			if [ ! $((i%2)) -eq 0 ]
+			then
+				sleep 1
+			fi
+			echo $((i*100/364))
+		done>& ${COPROC[1]}
+	fi
+	wait $COPROC_PID
+}
+#生成值班人员清单
+function gen_stafflist()
+{
+	local ret_str
+	local entry
+	if [ -f $STAFF_LIST ]
+	then
+		ret_str=$(zenity --text-info --width=$WIDTH --height=$HEIGHT --title="是否使用此值班人员清单" --filename="$STAFF_LIST" --ok-label "使用" --cancel-label "不使用" --editable)
+		if [ $? -eq 0 ]
 		then
-			echo $year
+			cat /dev/null >$STAFF_LIST
+			for entry in $ret_str
+			do
+				echo $entry>>$STAFF_LIST
+			done
+			return 0
 		fi
 	fi
+	cat /dev/null >$STAFF_LIST
+	zenity --info --width=$WIDTH --height=$HEIGHT --title="生成值班人员清单" --text="请按提示完成值班人员清单" --timeout=10
+	ret_str=$(zenity --calendar --width=$WIDTH --height=$HEIGHT --title="日期选择" --text="选择轮班开始第一天的日期" --date-format="%Y%m%d")
+	while [ $? -ne 0 ]
+	do
+		ret_str=$(zenity --calendar --width=$WIDTH --height=$HEIGHT --title="日期选择" --text="选择轮班开始第一天的日期" --date-format="%Y%m%d")
+	done
+	echo $ret_str>>$STAFF_LIST
+	for((i=1;i<4;i++))
+	do
+		ret_str=$(zenity --entry --width=$WIDTH --height=$HEIGHT --title="值班人员姓名" --text="请输入第$i个值班人员的姓名" --entry-text="姓名：张三")
+		if [ $? -ne 0 ]
+		then
+			i=$((i-1))
+		else
+			echo $ret_str>>$STAFF_LIST
+		fi
+	done
 }
-#ret_str=$(curl -sX GET "https://tool.bitefu.net/jiari/?d=$1"|eval jq '.\"$1\"')
-#str=$(cat text|eval jq '.\"$s\"'|sed 'y/{}:/()=/'|sed -e 's/"/["/1' -e 's/"/"]/2' -e 's/ //g' -e 's/,/ /')
-#year=2023
-#for((i=0;i<=364;i++))
-#do
-#    # 格式化日期  
-#	date_format="%Y%m%d %A"  
-#	day=$(date -d "$year-01-01 + $i day" +"$date_format")
-#	dat=${day:0:8}
-#	echo $dat
-#	#val=$(curl -X GET "https://tool.bitefu.net/jiari/?d=$dat")
-#	echo $day$val
-#done
-#curl -X GET "https://tool.bitefu.net/jiari/?d=20230931"
