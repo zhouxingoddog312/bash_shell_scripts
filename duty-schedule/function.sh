@@ -187,21 +187,48 @@ function gen_stafflist()
 #接受参数：年份、排班策略序号
 function gen_schedule()
 {
+#年份限制在当前年及下一年，现有策略2
+#年份不能超过来年
+	local -i low=$(date +%Y)
+	up=$[ low + 1 ]
+	if [ $1 -lt $low ] || [ $1 -gt $up ] || [ $2 -lt 1 ] || [ $2 -gt 2 ]
+	then
+		zenity --error --width=$WIDTH --height=$HEIGHT --title="无效的数据获取" --text="只能获取今明两年的排班表"
+		exit 1
+	fi
 	gen_stafflist
+#应该递归生成该年份向后前轮班开始那一年的所有节假日对照表
 	gen_calendar $1
 	eval "method_"$2 $1
 }
 #排班策略接受参数：年份
+#不区分工作日或者节假日，按固定轮次依次轮转
+#应该递归生成该年份向前至轮班开始那一年的所有排班表
 function method_1()
 {
-
+#判断该年度排班表是否存在，如果存在则不做任何操作
+	local schd="$DB_PRE_SCHE""$1""-1"
+	if [ -f "$schd" ]
+	then
+		return 0
+	fi
+	exec 6<&0
+	exec 0<$STAFF_LIST
+	local -a staff
+	local -i init_day
+	local str
+	read init_day
+	while read str
+	do
+		staff+=("$str")
+	done
+	exec 0<&6
 }
-function method_2()
-{
+#工作日为一个轮次，周末及节假日为一个轮次，分两个轮次依次轮转
+#function method_2()
+#{
 
-}
-
-
+#}
 
 #主界面选项：打印年度排班表、年度值班时长统计
 #获取要打印的年份和排班策略

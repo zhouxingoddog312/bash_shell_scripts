@@ -22,5 +22,4 @@ install_jq
 install_zenity
 
 gen_wkdir
-gen_calendar 2024
-gen_stafflist
+gen_schedule 2023 1
