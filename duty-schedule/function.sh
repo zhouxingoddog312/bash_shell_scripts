@@ -157,7 +157,7 @@ function gen_stafflist()
 	local entry
 	if [ -f $STAFF_LIST ]
 	then
-		ret_str=$(zenity --text-info --width=$WIDTH --height=$HEIGHT --title="是否使用此值班人员清单" --filename="$STAFF_LIST" --ok-label "使用" --cancel-label "不使用" --editable)
+		ret_str=$(zenity --text-info --width=$WIDTH --height=$HEIGHT --title="是否使用此值班人员清单(不要修改此内容)" --filename="$STAFF_LIST" --ok-label "使用" --cancel-label "不使用" --editable)
 		if [ $? -eq 0 ]
 		then
 			cat /dev/null >$STAFF_LIST
@@ -170,20 +170,42 @@ function gen_stafflist()
 	fi
 	cat /dev/null >$STAFF_LIST
 	zenity --info --width=$WIDTH --height=$HEIGHT --title="生成值班人员清单" --text="请按提示完成值班人员清单" --timeout=10
-	ret_str=$(zenity --calendar --width=$WIDTH --height=$HEIGHT --title="日期选择" --text="选择轮班开始第一天的日期" --date-format="%Y%m%d")
+	ret_str=$(zenity --forms --width=$WIDTH --height=$HEIGHT --title="生成值班人员清单" --add-calendar="选择轮班开始第一天的日期" --add-entry="第一个值班人员姓名" --add-entry="第二个值班人员姓名" --add-entry="第三个值班人员姓名" --separator="|" --forms-date-format="%Y%m%d")
 	while [ $? -ne 0 ]
 	do
-		ret_str=$(zenity --calendar --width=$WIDTH --height=$HEIGHT --title="日期选择" --text="选择轮班开始第一天的日期" --date-format="%Y%m%d")
+		ret_str=$(zenity --forms --width=$WIDTH --height=$HEIGHT --title="生成值班人员清单" --add-calendar="选择轮班开始第一天的日期" --add-entry="第一个值班人员姓名" --add-entry="第二个值班人员姓名" --add-entry="第三个值班人员姓名" --separator="|" --forms-date-format="%Y%m%d")
 	done
-	echo $ret_str>>$STAFF_LIST
-	for((i=1;i<4;i++))
+	OLDIFS=$IFS
+	IFS='|'
+	for entry in $ret_str
 	do
-		ret_str=$(zenity --entry --width=$WIDTH --height=$HEIGHT --title="值班人员姓名" --text="请输入第$i个值班人员的姓名" --entry-text="姓名：张三")
-		if [ $? -ne 0 ]
-		then
-			i=$((i-1))
-		else
-			echo $ret_str>>$STAFF_LIST
-		fi
+		echo $entry>>$STAFF_LIST
 	done
+	IFS=$OLDIFS
 }
+#依据节假日清单、值班人员清单、年份和排班策略生成该年度排班表
+#接受参数：年份、排班策略序号
+function gen_schedule()
+{
+	gen_stafflist
+	gen_calendar $1
+	eval "method_"$2 $1
+}
+#排班策略接受参数：年份
+function method_1()
+{
+
+}
+function method_2()
+{
+
+}
+
+
+
+#主界面选项：打印年度排班表、年度值班时长统计
+#获取要打印的年份和排班策略
+#function interface
+#{
+	
+#}
