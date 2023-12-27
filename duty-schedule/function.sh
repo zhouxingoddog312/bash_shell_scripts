@@ -198,7 +198,7 @@ function gen_stafflist()
 #验证日期格式是否正确
 		read init_date <<<"$ret_str"
 #验证人员清单行数正确
-		if [ $? -eq 0 ] && [ -z "`sed -n '/^[1-9][0-9][0-9][0-9][0-1][0-9][0-3][0-9]$/p' <<<"$init_date"`" ] && [ `wc -w <<<"$ret_str"` -eq $[ TOTAL_STAFF + 1 ] ]
+		if [ $? -eq 0 ] && [ -n "`sed -n '/^[1-9][0-9][0-9][0-9][0-1][0-9][0-3][0-9]$/p' <<<"$init_date"`" ] && [ `wc -w <<<"$ret_str"` -eq $[ TOTAL_STAFF + 1 ] ]
 		then
 			cat /dev/null >$STAFF_LIST
 			for entry in $ret_str
@@ -257,6 +257,16 @@ function method_1()
 	then
 		return 0
 	fi
+#递归的生成该年份向前至轮班开始那一年的排班表
+	local init_year
+	read init_year<$STAFF_LIST
+	init_year=${init_year:0:4}
+	if [ $1 -gt $init_year ]
+	then
+		local -i temp_year=$1
+		method_1 $[ temp_year - 1 ]
+	fi
+#主体
 	exec 6<&0
 	exec 0<$STAFF_LIST
 	local -a staff
@@ -268,6 +278,15 @@ function method_1()
 		staff+=("$str")
 	done
 	exec 0<&6
+#分为两种情况：
+#轮班开始的那一年，日期从轮班开始的日期起算，数组的下标从0开始
+#非轮班开始的那一年，日期从1月1日起算，数组下标由上一年的12月31日对应的值班人的下标加1开始
+	if [ $1 -eq ${init_day:0:4} ]
+	then
+
+	else
+
+	fi
 }
 #工作日为一个轮次，周末及节假日为一个轮次，分两个轮次依次轮转
 #function method_2()
