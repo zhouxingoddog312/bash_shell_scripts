@@ -46,6 +46,31 @@ function install_sed()
 		echo "sed工具已安装。"
 	fi
 }
+#install curl
+function install_curl()
+{
+	if command -v curl &>/dev/null
+	then
+		echo "curl工具已安装。"
+	else
+		echo "脚本需要curl工具。"
+		if command -v apt &>/dev/null
+		then
+			sudo apt update
+			sudo apt install -y curl
+		elif command -v dnf &>/dev/null
+		then
+			sudo dnf install -y curl
+		elif command -v yum &>/dev/null
+		then
+			sudo yum install -y curl
+		else
+			echo "请手动安装curl工具。"
+			exit 1
+		fi
+		echo "curl工具已安装。"
+	fi
+}
 #install jq
 function install_jq()
 {
@@ -112,10 +137,21 @@ function gen_wkdir()
 		mkdir -p $DB_DIR
 	fi
 }
-#接受一个年份的参数生成一个含有该年份所有日期的节假日标记的对照表
+#接受参数：年份
+#接受一个年份的参数生成含有该年份所有日期的节假日标记的对照表
 #工作日对应结果为0,休息日对应结果为1,节假日对应的结果为2
+#应该递归生成该年份向前至轮班开始那一年的所有节假日对照表，因为要从轮班那一天开始推算排班
+#此处应该保证调用此函数时，已生成值班人员清单
 function gen_calendar()
 {
+	local init_date
+	read init_date<$STAFF_LIST
+	init_date=${init_date:0:4}
+	if [ $1 -gt $init_date ]
+	then
+		local -i temp_year=$1
+		gen_calendar $[ temp_year - 1 ]
+	fi
 	local flag
 	local entry
 	local date_format="%Y%m%d	%A"
@@ -147,18 +183,22 @@ function gen_calendar()
 			fi
 			echo $((i*100/364))
 		done>& ${COPROC[1]}
+		wait $COPROC_PID
 	fi
-	wait $COPROC_PID
 }
 #生成值班人员清单
 function gen_stafflist()
 {
+	local init_date
 	local ret_str
 	local entry
 	if [ -f $STAFF_LIST ]
 	then
 		ret_str=$(zenity --text-info --width=$WIDTH --height=$HEIGHT --title="是否使用此值班人员清单(不要修改此内容)" --filename="$STAFF_LIST" --ok-label "使用" --cancel-label "不使用" --editable)
-		if [ $? -eq 0 ]
+#验证日期格式是否正确
+		read init_date <<<"$ret_str"
+#验证人员清单行数正确
+		if [ $? -eq 0 ] && [ -z "`sed -n '/^[1-9][0-9][0-9][0-9][0-1][0-9][0-3][0-9]$/p' <<<"$init_date"`" ] && [ `wc -w <<<"$ret_str"` -eq $[ TOTAL_STAFF + 1 ] ]
 		then
 			cat /dev/null >$STAFF_LIST
 			for entry in $ret_str
@@ -169,11 +209,15 @@ function gen_stafflist()
 		fi
 	fi
 	cat /dev/null >$STAFF_LIST
-	zenity --info --width=$WIDTH --height=$HEIGHT --title="生成值班人员清单" --text="请按提示完成值班人员清单" --timeout=10
+	zenity --info --width=$WIDTH --height=$HEIGHT --title="生成值班人员清单" --text="请按提示完成值班人员清单" --timeout=5
 	ret_str=$(zenity --forms --width=$WIDTH --height=$HEIGHT --title="生成值班人员清单" --add-calendar="选择轮班开始第一天的日期" --add-entry="第一个值班人员姓名" --add-entry="第二个值班人员姓名" --add-entry="第三个值班人员姓名" --separator="|" --forms-date-format="%Y%m%d")
-	while [ $? -ne 0 ]
+#验证日期格式是否正确
+	read -d '|' init_date <<<"$ret_str"
+	while [ $? -ne 0 ] || [ -z "`sed -n '/^[1-9][0-9][0-9][0-9][0-1][0-9][0-3][0-9]$/p' <<<"$init_date"`" ]
 	do
 		ret_str=$(zenity --forms --width=$WIDTH --height=$HEIGHT --title="生成值班人员清单" --add-calendar="选择轮班开始第一天的日期" --add-entry="第一个值班人员姓名" --add-entry="第二个值班人员姓名" --add-entry="第三个值班人员姓名" --separator="|" --forms-date-format="%Y%m%d")
+#验证日期格式是否正确
+		read -d '|' init_date <<<"$ret_str"
 	done
 	OLDIFS=$IFS
 	IFS='|'
@@ -187,17 +231,18 @@ function gen_stafflist()
 #接受参数：年份、排班策略序号
 function gen_schedule()
 {
-#年份限制在当前年及下一年，现有策略2
-#年份不能超过来年
-	local -i low=$(date +%Y)
-	up=$[ low + 1 ]
-	if [ $1 -lt $low ] || [ $1 -gt $up ] || [ $2 -lt 1 ] || [ $2 -gt 2 ]
+#现有策略2
+#年份不能早于2023年
+#年份不能超过来年，因为无法获取来年过后的节假日对照表
+	local -i up=$(date +%Y)
+	up=$[ up + 1 ]
+	if [ $1 -lt 2023 ] || [ $1 -gt $up ] || [ $2 -lt 1 ] || [ $2 -gt 2 ]
 	then
-		zenity --error --width=$WIDTH --height=$HEIGHT --title="无效的数据获取" --text="只能获取今明两年的排班表"
+		zenity --error --width=$WIDTH --height=$HEIGHT --title="无效的数据获取" --text="获取年份或获取策略错误"
 		exit 1
 	fi
 	gen_stafflist
-#应该递归生成该年份向后前轮班开始那一年的所有节假日对照表
+#应该递归生成该年份向前至轮班开始那一年的所有节假日对照表，因为要从轮班那一天开始推算排班
 	gen_calendar $1
 	eval "method_"$2 $1
 }
