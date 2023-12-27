@@ -163,6 +163,7 @@ function gen_calendar()
 		touch $calendar
 #使用zenity显示数据生成进度
 		coproc zenity --progress --width=$WIDTH --height=$HEIGHT --title="年度节假日数据生成中" --text="正在获取$1年度节假日数据" --percentage=0 --no-cancel --auto-close
+#平年364，闰年365
 		for((i=0;i<=364;i++))
 		do
 			entry=$(date -d "$1-01-01 + $i day" +"$date_format")
@@ -227,30 +228,12 @@ function gen_stafflist()
 	done
 	IFS=$OLDIFS
 }
-#依据节假日清单、值班人员清单、年份和排班策略生成该年度排班表
-#接受参数：年份、排班策略序号
-function gen_schedule()
-{
-#现有策略2
-#年份不能早于2023年
-#年份不能超过来年，因为无法获取来年过后的节假日对照表
-	local -i up=$(date +%Y)
-	up=$[ up + 1 ]
-	if [ $1 -lt 2023 ] || [ $1 -gt $up ] || [ $2 -lt 1 ] || [ $2 -gt 2 ]
-	then
-		zenity --error --width=$WIDTH --height=$HEIGHT --title="无效的数据获取" --text="获取年份或获取策略错误"
-		exit 1
-	fi
-	gen_stafflist
-#应该递归生成该年份向前至轮班开始那一年的所有节假日对照表，因为要从轮班那一天开始推算排班
-	gen_calendar $1
-	eval "method_"$2 $1
-}
 #排班策略接受参数：年份
 #不区分工作日或者节假日，按固定轮次依次轮转
 #应该递归生成该年份向前至轮班开始那一年的所有排班表
-function method_1()
+function method1()
 {
+	local cal="$DB_PRE_CAL$1"
 #判断该年度排班表是否存在，如果存在则不做任何操作
 	local schd="$DB_PRE_SCHE""$1""-1"
 	if [ -f "$schd" ]
@@ -264,36 +247,119 @@ function method_1()
 	if [ $1 -gt $init_year ]
 	then
 		local -i temp_year=$1
-		method_1 $[ temp_year - 1 ]
+		method1 $[ temp_year - 1 ]
 	fi
-#主体
+#利用值班人员清单获取轮班开始的日期和值班人员数组
 	exec 6<&0
 	exec 0<$STAFF_LIST
 	local -a staff
-	local -i init_day
+	local -i init_date
 	local str
-	read init_day
+	read init_date
 	while read str
 	do
 		staff+=("$str")
 	done
 	exec 0<&6
 #分为两种情况：
-#轮班开始的那一年，日期从轮班开始的日期起算，数组的下标从0开始
-#非轮班开始的那一年，日期从1月1日起算，数组下标由上一年的12月31日对应的值班人的下标加1开始
-	if [ $1 -eq ${init_day:0:4} ]
+	local line
+	local -i index=0
+	if [ $1 -eq ${init_date:0:4} ]
 	then
-
+#轮班开始的那一年，日期从轮班开始的日期起算，数组的下标从0开始
+		exec 5<&0
+		exec 0<$cal
+		exec 6>&1
+		exec 1>$schd
+		while read line
+		do
+			if [ "$init_date" = "`cut -d' ' -f1 <<<$line`" ]
+			then
+				line="$line""	"${staff[$index]}
+				echo $line
+				((index++))
+				if [ $index -gt 2 ]
+				then
+					index=0
+				fi
+				while read line
+				do
+					line="$line""	"${staff[$index]}
+					echo $line
+					((index++))
+					if [ $index -gt 2 ]
+					then
+						index=0
+					fi
+				done
+			fi
+		done
+		exec 0<&5
+		exec 1>&6
 	else
-
+#非轮班开始的那一年，日期从1月1日起算，数组下标由上一年的12月31日对应的值班人的下标加1开始
+		local pre_year=$1
+		pre_year=$[ pre_year - 1 ]
+		local pre_schd="$DB_PRE_SCHE""$pre_year""-1"
+		local last_one=$(tail -n1 $pre_schd|cut -d' ' -f4)
+		case $last_one in
+		${staff[0]})
+			index=1;;
+		${staff[1]})
+			index=2;;
+		${staff[2]})
+			index=0;;
+		esac
+		exec 5<&0
+		exec 0<$cal
+		exec 6>&1
+		exec 1>$schd
+		while read line
+		do
+			line="$line""	"${staff[$index]}
+			echo $line
+			((index++))
+			if [ $index -gt 2 ]
+			then
+				index=0
+			fi
+		done
+		exec 0<&5
+		exec 1>&6
 	fi
 }
 #工作日为一个轮次，周末及节假日为一个轮次，分两个轮次依次轮转
-#function method_2()
+#function method2()
 #{
 
 #}
-
+#依据节假日清单、值班人员清单、年份和排班策略生成该年度排班表
+#接受参数：年份、排班策略序号
+function gen_schedule()
+{
+#现有策略2
+#年份不能超过来年，因为无法获取来年过后的节假日对照表
+	local -i up=$(date +%Y)
+	up=$[ up + 1 ]
+	if [ $1 -gt $up ] || [ $2 -lt 1 ] || [ $2 -gt 2 ]
+	then
+		zenity --error --width=$WIDTH --height=$HEIGHT --title="无效的数据获取" --text="获取年份或获取策略错误"
+		exit 1
+	fi
+	gen_stafflist
+#指定的年份不能小于轮班开始的那一年
+	local init_date
+	read init_date<$STAFF_LIST
+	init_date=${init_date:0:4}
+	if [ $1 -lt $init_date ]
+	then
+		zenity --error --width=$WIDTH --height=$HEIGHT --title="无效的数据获取" --text="不能获取还未开始轮班的年份"
+		exit 1
+	fi
+#应该递归生成该年份向前至轮班开始那一年的所有节假日对照表，因为要从轮班那一天开始推算排班
+	gen_calendar $1
+	eval "method"$2 $1
+}
 #主界面选项：打印年度排班表、年度值班时长统计
 #获取要打印的年份和排班策略
 #function interface
