@@ -25,3 +25,4 @@ install_curl
 
 gen_wkdir
 gen_schedule 2024 1
+summarize 2023 1

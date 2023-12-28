@@ -360,6 +360,65 @@ function gen_schedule()
 	gen_calendar $1
 	eval "method"$2 $1
 }
+#汇总一年内各人值班夜班总数、全日班总数及总时长（夜班16小时，全日班24小时）
+#参数：年份、排班策略序号
+function summarize()
+{
+	local line
+	local schd=$DB_PRE_SCHE$1"-"$2
+#利用值班人员清单获取值班人员数组
+	exec 6<&0
+	exec 0<$STAFF_LIST
+	local -a staff
+	local str
+	read str
+	while read str
+	do
+		staff+=("$str")
+	done
+	exec 0<&6
+#遍历排班表进行统计
+	local -a night=(0 0 0)
+	local -a allday=(0 0 0)
+	local -a total_time=(0 0 0)
+	exec 6<&0
+	exec<$schd
+	while read line
+	do
+		str=`cut -d' ' -f4 <<<$line`
+		case $str in
+		${staff[0]})
+			if [ `cut -d' ' -f3 <<<$line` -eq 0 ]
+			then
+				((night[0]++))
+			else
+				((allday[0]++))
+			fi
+			;;
+		${staff[1]})
+			if [ `cut -d' ' -f3 <<<$line` -eq 0 ]
+			then
+				((night[1]++))
+			else
+				((allday[1]++))
+			fi
+			;;
+		${staff[2]})
+			if [ `cut -d' ' -f3 <<<$line` -eq 0 ]
+			then
+				((night[2]++))
+			else
+				((allday[2]++))
+			fi
+			;;
+		esac
+	done
+	exec 0<&6
+	total_time[0]=$[ ${night[0]} * 16 + ${allday[0]} * 24 ]
+	total_time[1]=$[ ${night[1]} * 16 + ${allday[1]} * 24 ]
+	total_time[2]=$[ ${night[2]} * 16 + ${allday[2]} * 24 ]
+	zenity --list --width=$WIDTH --height=$HEIGHT --title="$1年度值班情况汇总表" --column="姓名" --column="夜班数" --column="全天班数" --column="年度值班总时长" ${staff[0]} ${night[0]} ${allday[0]} ${total_time[0]} ${staff[1]} ${night[1]} ${allday[1]} ${total_time[1]} ${staff[2]} ${night[2]} ${allday[2]} ${total_time[2]}
+}
 #主界面选项：打印年度排班表、年度值班时长统计
 #获取要打印的年份和排班策略
 #function interface
