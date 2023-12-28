@@ -164,7 +164,14 @@ function gen_calendar()
 #使用zenity显示数据生成进度
 		coproc zenity --progress --width=$WIDTH --height=$HEIGHT --title="年度节假日数据生成中" --text="正在获取$1年度节假日数据" --percentage=0 --no-cancel --auto-close
 #平年364，闰年365
-		for((i=0;i<=364;i++))
+		local -i days_count=0
+		if  [[ $(($1%4)) == 0 && $(($1%100)) != 0 ]] || [ $(($1%400)) == 0 ]
+		then
+			days_count=366
+		else
+			days_count=365
+		fi
+		for((i=0;i<$days_count;i++))
 		do
 			entry=$(date -d "$1-01-01 + $i day" +"$date_format")
 			day=${entry:0:8}
@@ -419,9 +426,30 @@ function summarize()
 	total_time[2]=$[ ${night[2]} * 16 + ${allday[2]} * 24 ]
 	zenity --list --width=$WIDTH --height=$HEIGHT --title="$1年度值班情况汇总表" --column="姓名" --column="夜班数" --column="全天班数" --column="年度值班总时长" ${staff[0]} ${night[0]} ${allday[0]} ${total_time[0]} ${staff[1]} ${night[1]} ${allday[1]} ${total_time[1]} ${staff[2]} ${night[2]} ${allday[2]} ${total_time[2]}
 }
+#打印年度排班表
+#参数：年份、排班策略序号
+function print()
+{
+	local args=""
+	local line
+	local schd=$DB_PRE_SCHE$1"-"$2
+	exec 6<&0
+	exec<$schd
+	while read line
+	do
+		args=$args"$line"" "
+	done
+	exec 0<&6
+	zenity --list --width=$WIDTH --height=$HEIGHT --title="$1年度排班表" --column="日期" --column="星期" --column="工作日0/休息日1/节假日2" --column="值班人" $args
+}
 #主界面选项：打印年度排班表、年度值班时长统计
 #获取要打印的年份和排班策略
-#function interface
-#{
-	
-#}
+function interface()
+{
+	local year=$(zenity --entry --width=$WIDTH --height=$HEIGHT --title="请输入你要查询的年份" --text="年份" --entry-text="`date +%Y`")
+	local select=$(zenity --list --radiolist --width=$WIDTH --height=$HEIGHT --title="排班策略选择" --column="选择" --column="策略" --column="说明" true 1 不区分工作日或者节假日，按固定轮次依次轮转 false 2 工作日为一个轮次，周末及节假日为一个轮次，分两个轮次依次轮转)
+	gen_schedule $year $select
+	coproc summarize $year $select
+	print $year $select
+	wait $COPROC_PID
+}
