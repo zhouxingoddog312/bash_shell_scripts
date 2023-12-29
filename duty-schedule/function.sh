@@ -335,11 +335,173 @@ function method1()
 		exec 1>&6
 	fi
 }
+#排班策略接受参数：年份
 #工作日为一个轮次，周末及节假日为一个轮次，分两个轮次依次轮转
-#function method2()
-#{
-
-#}
+#应该递归生成该年份向前至轮班开始那一年的所有排班表
+function method2()
+{
+	local cal="$DB_PRE_CAL$1"
+#判断该年度排班表是否存在，如果存在则不做任何操作
+	local schd="$DB_PRE_SCHE""$1""-2"
+	if [ -f "$schd" ]
+	then
+		return 0
+	fi
+#递归的生成该年份向前至轮班开始那一年的排班表
+	local init_year
+	read init_year<$STAFF_LIST
+	init_year=${init_year:0:4}
+	if [ $1 -gt $init_year ]
+	then
+		local -i temp_year=$1
+		method2 $[ temp_year - 1 ]
+	fi
+#利用值班人员清单获取轮班开始的日期、工作日值班人员数组、休息日值班人员数组
+	exec 6<&0
+	exec 0<$STAFF_LIST
+	local -a staff_workday
+	local -a staff_offday
+	local -i init_date
+	local str
+	read init_date
+	while read str
+	do
+		staff_workday+=("$str")
+		staff_offday+=("$str")
+	done
+	exec 0<&6
+#分为两种情况：
+	local line
+	local -i index_workday=0
+	local -i index_offday=0
+	if [ $1 -eq ${init_date:0:4} ]
+	then
+#轮班开始的那一年，日期从轮班开始的日期起算，数组的下标从0开始
+		exec 5<&0
+		exec 0<$cal
+		exec 6>&1
+		exec 1>$schd
+		while read line
+		do
+			if [ "$init_date" = "`cut -d' ' -f1 <<<$line`" ]
+			then
+				if [ "`cut -d' ' -f3 <<<$line`" -eq 0 ]
+				then
+					line="$line""	"${staff_workday[$index_workday]}
+					echo $line
+					((index_workday++))
+					if [ $index_workday -gt 2 ]
+					then
+						index_workday=0
+					fi
+				else
+					line="$line""	"${staff_offday[$index_offday]}
+					echo $line
+					((index_offday++))
+					if [ $index_offday -gt 2 ]
+					then
+						index_offday=0
+					fi
+				fi
+				while read line
+				do
+					if [ "`cut -d' ' -f3 <<<$line`" -eq 0 ]
+					then
+						line="$line""	"${staff_workday[$index_workday]}
+						echo $line
+						((index_workday++))
+						if [ $index_workday -gt 2 ]
+						then
+							index_workday=0
+						fi
+					else
+						line="$line""	"${staff_offday[$index_offday]}
+						echo $line
+						((index_offday++))
+						if [ $index_offday -gt 2 ]
+						then
+							index_offday=0
+						fi
+					fi
+				done
+			fi
+		done
+		exec 0<&5
+		exec 1>&6
+	else
+#非轮班开始的那一年，日期从1月1日起算，数组下标由上一年的12月31日对应的值班人的下标加1开始
+		local pre_year=$1
+		pre_year=$[ pre_year - 1 ]
+		local pre_schd="$DB_PRE_SCHE""$pre_year""-2"
+		index_workday=-1
+		index_offday=-1
+		while read line
+		do
+			if [ "`cut -d' ' -f3 <<<$line`" -eq 0 ] && [ $index_workday -ne -1 ]
+			then
+				case `cut -d' ' -f4 <<<$line` in
+				${staff_workday[0]})
+					index_workday=1;;
+				${staff_workday[1]})
+					index_workday=2;;
+				${staff_workday[2]})
+					index_workday=0;;
+				esac
+			fi
+			if [ "`cut -d' ' -f3 <<<$line`" -ne 0 ] && [ $index_offday -ne -1 ]
+			then
+				case `cut -d' ' -f4 <<<$line` in
+				${staff_offday[0]})
+					index_offday=1;;
+				${staff_offday[1]})
+					index_offday=2;;
+				${staff_offday[2]})
+					index_offday=0;;
+				esac
+			fi
+			if [ $index_workday -ne -1 ] && [ $index_offday -ne -1 ]
+			then
+				break
+			fi
+		done <<<`tac $pre_schd`
+#应对极端情况
+		if [ $index_workday -eq -1 ]
+		then
+			index_workday=0
+		fi	
+		if [ $index_offday -eq -1 ]
+		then
+			index_offday=0
+		fi
+		exec 5<&0
+		exec 0<$cal
+		exec 6>&1
+		exec 1>$schd
+		while read line
+		do
+			if [ "`cut -d' ' -f3 <<<$line`" -eq 0 ]
+			then
+				line="$line""	"${staff_workday[$index_workday]}
+				echo $line
+				((index_workday++))
+				if [ $index_workday -gt 2 ]
+				then
+					index_workday=0
+				fi
+			else
+				line="$line""	"${staff_offday[$index_offday]}
+				echo $line
+				((index_offday++))
+				if [ $index_offday -gt 2 ]
+				then
+					index_offday=0
+				fi
+			fi
+		done
+		exec 0<&5
+		exec 1>&6
+	fi
+}
 #依据节假日清单、值班人员清单、年份和排班策略生成该年度排班表
 #接受参数：年份、排班策略序号
 function gen_schedule()
@@ -447,9 +609,18 @@ function print()
 function interface()
 {
 	local year=$(zenity --entry --width=$WIDTH --height=$HEIGHT --title="请输入你要查询的年份" --text="年份" --entry-text="`date +%Y`")
-	local select=$(zenity --list --radiolist --width=$WIDTH --height=$HEIGHT --title="排班策略选择" --column="选择" --column="策略" --column="说明" true 1 不区分工作日或者节假日，按固定轮次依次轮转 false 2 工作日为一个轮次，周末及节假日为一个轮次，分两个轮次依次轮转)
-	gen_schedule $year $select
-	coproc summarize $year $select
-	print $year $select
-	wait $COPROC_PID
+	if [ $? -ne 0 ]
+	then
+		exit 0
+	else
+		local select=$(zenity --list --radiolist --width=$WIDTH --height=$HEIGHT --title="排班策略选择" --column="选择" --column="策略" --column="说明" true 1 不区分工作日或者节假日，按固定轮次依次轮转 false 2 工作日为一个轮次，周末及节假日为一个轮次，分两个轮次依次轮转)
+		while [ $? -ne 0 ]
+		do
+			local select=$(zenity --list --radiolist --width=$WIDTH --height=$HEIGHT --title="排班策略选择" --column="选择" --column="策略" --column="说明" true 1 不区分工作日或者节假日，按固定轮次依次轮转 false 2 工作日为一个轮次，周末及节假日为一个轮次，分两个轮次依次轮转)
+		done
+		gen_schedule $year $select
+		coproc summarize $year $select
+		print $year $select
+		wait $COPROC_PID
+	fi
 }
